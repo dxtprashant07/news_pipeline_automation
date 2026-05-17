@@ -55,9 +55,14 @@ logs/
 
 # Testing
 .pytest_cache/
+pytest-cache-files-*/
 .coverage
 htmlcov/
 .tox/
+
+# SQLite WAL files
+*.db-shm
+*.db-wal
 
 # OS
 Thumbs.db

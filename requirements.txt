@@ -1,26 +1,45 @@
 # ── Core ──────────────────────────────────────────────────
-pydantic>=2.0
-pydantic-settings>=2.0
+pydantic==2.12.5
+pydantic-settings==2.13.1
 
 # ── Database ───────────────────────────────────────────────
-sqlalchemy>=2.0
+SQLAlchemy==2.0.49
 
 # ── Scheduler ─────────────────────────────────────────────
-apscheduler>=3.10
+APScheduler==3.11.2
 
 # ── HTTP ──────────────────────────────────────────────────
-requests>=2.31
+requests==2.33.1
+httpx==0.28.1
 
-# ── News Sources ──────────────────────────────────────────
-newsapi-python>=0.2.7        # NewsAPI
-praw>=7.7                    # Reddit
-feedparser>=6.0              # RSS feeds
-python-dateutil>=2.8         # Date parsing
+# ── News Sources (Stage 1) ────────────────────────────────
+newsapi-python>=0.2.7        # no wheel pinned — install from PyPI
+praw==7.8.1                  # Reddit
+feedparser==6.0.12           # RSS feeds
+python-dateutil==2.9.0.post0
 
 # ── Security ──────────────────────────────────────────────
-bleach>=6.1                  # HTML sanitization (optional — sanitizer.py uses regex)
+bleach==6.3.0
+
+# ── AI Writing (Stage 3+4) ────────────────────────────────
+anthropic==0.102.0
+openai==2.37.0
+
+# ── Dashboard (Stage 5) ───────────────────────────────────
+fastapi==0.136.1
+starlette==1.0.0
+uvicorn==0.47.0
+gunicorn==23.0.0             # production ASGI server
+python-multipart==0.0.28
+jinja2==3.1.6                # HTML template rendering for dashboard
+
+# ── Analytics (Stage 7) — optional ───────────────────────
+# Uncomment when setting up Google Analytics integration:
+# google-analytics-data>=0.18
+# google-api-python-client>=2.100
+# google-auth>=2.20
 
 # ── Dev & Testing ─────────────────────────────────────────
-pytest>=7.4
-pytest-mock>=3.12
-python-dotenv>=1.0
+pytest==9.0.3
+pytest-mock==3.15.1
+python-dotenv==1.2.2

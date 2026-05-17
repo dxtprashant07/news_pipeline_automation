@@ -1,1 +1,0 @@
-"""Configuration settings and categories."""

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>News Pipeline — Editor Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #333; }
+    header { background: #1a202c; color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 1.25rem; font-weight: 600; }
+    .stats-bar { display: flex; gap: 1rem; background: #fff; padding: 1rem 2rem; border-bottom: 1px solid #e2e8f0; }
+    .stat { text-align: center; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: #2d3748; }
+    .stat-label { font-size: 0.75rem; color: #718096; }
+    .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+    .article-card { background: #fff; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; }
+    .article-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .article-meta { font-size: 0.8rem; color: #718096; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; margin-right: 4px; }
+    .badge-category { background: #ebf4ff; color: #2b6cb0; }
+    .badge-score { background: #f0fff4; color: #276749; }
+    .actions { display: flex; gap: 0.5rem; }
+    button { padding: 0.4rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 500; }
+    .btn-approve { background: #38a169; color: #fff; }
+    .btn-approve:hover { background: #2f855a; }
+    .btn-reject { background: #e53e3e; color: #fff; }
+    .btn-reject:hover { background: #c53030; }
+    .btn-view { background: #4a5568; color: #fff; }
+    .btn-view:hover { background: #2d3748; }
+    .empty { text-align: center; padding: 3rem; color: #a0aec0; }
+    #detail-panel { display: none; position: fixed; top: 0; right: 0; width: 50%; height: 100vh; background: #fff; box-shadow: -4px 0 20px rgba(0,0,0,0.15); overflow-y: auto; padding: 2rem; z-index: 100; }
+    #detail-panel h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+    #detail-panel .article-body { font-size: 0.9rem; line-height: 1.7; }
+    #detail-panel .article-body p { margin-bottom: 1rem; }
+    .close-btn { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #718096; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>News Pipeline — Editor Dashboard</h1>
+    <span id="refresh-time" style="font-size:0.8rem;color:#a0aec0;">Loading…</span>
+  </header>
+
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat"><div class="stat-value" id="stat-pending">-</div><div class="stat-label">Pending Review</div></div>
+    <div class="stat"><div class="stat-value" id="stat-approved">-</div><div class="stat-label">Approved</div></div>
+    <div class="stat"><div class="stat-value" id="stat-published">-</div><div class="stat-label">Published</div></div>
+    <div class="stat"><div class="stat-value" id="stat-total">-</div><div class="stat-label">Total Stories</div></div>
+    <div class="stat"><div class="stat-value" id="stat-verified">-</div><div class="stat-label">Verified</div></div>
+    <div class="stat"><div class="stat-value" id="stat-rejected">-</div><div class="stat-label">Rejected</div></div>
+  </div>
+
+  <div class="container">
+    <div id="articles-list"></div>
+  </div>
+
+  <div id="detail-panel">
+    <button class="close-btn" onclick="closeDetail()">×</button>
+    <h2 id="detail-headline"></h2>
+    <div class="article-meta" id="detail-meta" style="margin-bottom:1rem;"></div>
+    <div class="article-body" id="detail-body"></div>
+    <div style="margin-top:1rem;display:flex;gap:0.5rem;">
+      <button class="btn-approve" id="detail-approve-btn">Approve</button>
+      <button class="btn-reject" id="detail-reject-btn">Reject</button>
+    </div>
+  </div>
+
+  <script>
+    const API_KEY = "{{ api_key }}";
+    const HEADERS = { 'Content-Type': 'application/json', 'X-API-Key': API_KEY };
+    let currentDraftId = null;
+
+    async function loadStats() {
+      const res = await fetch('/stats/', { headers: HEADERS });
+      const data = await res.json();
+      document.getElementById('stat-pending').textContent = data.pending_review;
+      document.getElementById('stat-approved').textContent = data.approved;
+      document.getElementById('stat-published').textContent = data.published;
+      document.getElementById('stat-total').textContent = data.total_stories;
+      document.getElementById('stat-verified').textContent = data.verified;
+      document.getElementById('stat-rejected').textContent = data.rejected_checks;
+      document.getElementById('refresh-time').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    }
+
+    async function loadArticles() {
+      const res = await fetch('/articles/', { headers: HEADERS });
+      const articles = await res.json();
+      const list = document.getElementById('articles-list');
+      if (!articles.length) {
+        list.innerHTML = '<div class="empty"><p>No articles pending review.</p><p style="margin-top:0.5rem;font-size:0.85rem;">Run the pipeline to generate new drafts.</p></div>';
+        return;
+      }
+      list.innerHTML = articles.map(a => `
+        <div class="article-card">
+          <div>
+            <div class="article-title">${a.headline}</div>
+            <div class="article-meta">
+              <span class="badge badge-category">${a.category}</span>
+              <span class="badge badge-score">Score ${a.credibility_score}</span>
+              ${a.word_count} words · ${a.focus_keyword || 'no keyword'}
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn-view" onclick="viewArticle(${a.id})">View</button>
+            <button class="btn-approve" onclick="approve(${a.id})">Approve</button>
+            <button class="btn-reject" onclick="reject(${a.id})">Reject</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function viewArticle(id) {
+      const res = await fetch('/articles/' + id, { headers: HEADERS });
+      const a = await res.json();
+      currentDraftId = id;
+      document.getElementById('detail-headline').textContent = a.headline;
+      document.getElementById('detail-meta').innerHTML =
+        '<span class="badge badge-category">' + a.category + '</span>' +
+        '<span class="badge badge-score">Score ' + a.credibility_score + '</span>' +
+        ' · ' + a.word_count + ' words · <a href="' + a.source_url + '" target="_blank">Source</a>';
+      document.getElementById('detail-body').innerHTML = a.article_html;
+      document.getElementById('detail-approve-btn').onclick = () => approve(id);
+      document.getElementById('detail-reject-btn').onclick = () => reject(id);
+      document.getElementById('detail-panel').style.display = 'block';
+    }
+
+    function closeDetail() {
+      document.getElementById('detail-panel').style.display = 'none';
+      currentDraftId = null;
+    }
+
+    async function approve(id) {
+      await fetch('/articles/' + id + '/approve', { method: 'POST', headers: HEADERS, body: JSON.stringify({}) });
+      closeDetail();
+      await Promise.all([loadStats(), loadArticles()]);
+    }
+
+    async function reject(id) {
+      const reason = prompt('Rejection reason (optional):') || '';
+      await fetch('/articles/' + id + '/reject', { method: 'POST', headers: HEADERS, body: JSON.stringify({editor_notes: reason}) });
+      closeDetail();
+      await Promise.all([loadStats(), loadArticles()]);
+    }
+
+    // Init
+    Promise.all([loadStats(), loadArticles()]);
+    setInterval(() => Promise.all([loadStats(), loadArticles()]), 30000);
+  </script>
+</body>
+</html>
