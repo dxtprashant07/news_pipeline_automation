@@ -46,11 +46,18 @@ copy .env.example .env       # Windows
 Fill in your API keys in `.env` (minimum required to start):
 
 ```env
-NEWSAPI_KEY=your_key          # newsapi.org — free tier
-GEMINI_API_KEY=your_key       # aistudio.google.com — free tier
-DASHBOARD_API_KEY=your_key    # generate: python -c "import secrets; print(secrets.token_hex(32))"
-DASHBOARD_SECRET_KEY=your_key # generate: python -c "import secrets; print(secrets.token_hex(32))"
+NEWSAPI_KEY=your_key        # newsapi.org — free tier
+GEMINI_API_KEY=your_key     # aistudio.google.com — free tier
 ```
+
+Generate secure random keys for the dashboard (run this once, paste the output into `.env`):
+
+```bash
+python -c "import secrets; print('DASHBOARD_SECRET_KEY=' + secrets.token_hex(32))"
+python -c "import secrets; print('DASHBOARD_API_KEY=' + secrets.token_hex(32))"
+```
+
+Copy the printed values directly into your `.env` file. These are random strings you generate yourself — there is no external service needed.
 
 ### 3. Run everything with one command
 
