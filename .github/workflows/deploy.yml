@@ -1,8 +1,10 @@
 name: CD — Deploy to Server
 
 on:
-  push:
-    branches: ["main"]
+  workflow_dispatch:  # trigger manually from GitHub Actions tab once server is ready
+  # Uncomment below to auto-deploy on every push to main:
+  # push:
+  #   branches: ["main"]
 
 # Only run deploy after CI passes
 jobs:
