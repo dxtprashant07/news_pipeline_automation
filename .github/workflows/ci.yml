@@ -1,0 +1,42 @@
+name: CI — Test & Lint
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create minimal .env for tests
+        run: |
+          cp .env.example .env
+          echo "DASHBOARD_SECRET_KEY=test-secret-key-for-ci-only" >> .env
+          echo "DASHBOARD_API_KEY=test-api-key-for-ci-only" >> .env
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+
+      - name: Check imports are valid
+        run: |
+          python -c "from core.config.settings import get_settings"
+          python -c "from core.db.models import Base"
+          python -c "from dashboard.app import app"
+          python -c "from discovery.pipeline import DiscoveryPipeline"
+          python -c "from verification.pipeline import VerificationPipeline"
+          python -c "from writing.pipeline import WritingPipeline"
