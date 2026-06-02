@@ -4,148 +4,1886 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>News Pipeline — Editor Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #333; }
-    header { background: #1a202c; color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-    header h1 { font-size: 1.25rem; font-weight: 600; }
-    .stats-bar { display: flex; gap: 1rem; background: #fff; padding: 1rem 2rem; border-bottom: 1px solid #e2e8f0; }
-    .stat { text-align: center; }
-    .stat-value { font-size: 1.5rem; font-weight: 700; color: #2d3748; }
-    .stat-label { font-size: 0.75rem; color: #718096; }
-    .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
-    .article-card { background: #fff; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; }
-    .article-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
-    .article-meta { font-size: 0.8rem; color: #718096; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; margin-right: 4px; }
-    .badge-category { background: #ebf4ff; color: #2b6cb0; }
-    .badge-score { background: #f0fff4; color: #276749; }
-    .actions { display: flex; gap: 0.5rem; }
-    button { padding: 0.4rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 500; }
-    .btn-approve { background: #38a169; color: #fff; }
-    .btn-approve:hover { background: #2f855a; }
-    .btn-reject { background: #e53e3e; color: #fff; }
-    .btn-reject:hover { background: #c53030; }
-    .btn-view { background: #4a5568; color: #fff; }
-    .btn-view:hover { background: #2d3748; }
-    .empty { text-align: center; padding: 3rem; color: #a0aec0; }
-    #detail-panel { display: none; position: fixed; top: 0; right: 0; width: 50%; height: 100vh; background: #fff; box-shadow: -4px 0 20px rgba(0,0,0,0.15); overflow-y: auto; padding: 2rem; z-index: 100; }
-    #detail-panel h2 { font-size: 1.1rem; margin-bottom: 1rem; }
-    #detail-panel .article-body { font-size: 0.9rem; line-height: 1.7; }
-    #detail-panel .article-body p { margin-bottom: 1rem; }
-    .close-btn { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #718096; }
+    :root {
+      --bg:        #0d1117;
+      --nav:       #010409;
+      --surface:   #161b27;
+      --surface-2: #1c2333;
+      --surface-3: #212c3e;
+      --border:    rgba(255,255,255,0.07);
+      --border-hi: rgba(99,102,241,0.5);
+      --text-1:    #e6edf3;
+      --text-2:    #8b949e;
+      --text-3:    #484f58;
+      --accent:    #6366f1;
+      --accent-2:  #8b5cf6;
+      --accent-bg: rgba(99,102,241,0.12);
+      --green:     #3fb950;
+      --green-bg:  rgba(63,185,80,0.12);
+      --red:       #f85149;
+      --red-bg:    rgba(248,81,73,0.12);
+      --amber:     #d29922;
+      --amber-bg:  rgba(210,153,34,0.12);
+      --blue:      #58a6ff;
+      --blue-bg:   rgba(88,166,255,0.12);
+      --purple-bg: rgba(139,92,246,0.12);
+      --sh:        0 1px 3px rgba(0,0,0,0.4);
+      --sh-lg:     0 20px 40px rgba(0,0,0,0.6);
+      --r:         8px;
+      --r-lg:      10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      min-height: 100vh;
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; }
+
+    /* ───── SCROLLBAR ───── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+    /* ───── NAV ───── */
+    .nav {
+      background: var(--nav);
+      height: 56px;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid var(--border);
+      gap: 1rem;
+    }
+
+    .nav-left { display: flex; align-items: center; gap: 1.25rem; }
+
+    .brand { display: flex; align-items: center; gap: 0.6rem; }
+    .brand-icon {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
+    .brand-name {
+      font-size: 0.88rem; font-weight: 700; color: var(--text-1);
+      letter-spacing: -0.02em;
+    }
+
+    .nav-sep { width: 1px; height: 20px; background: var(--border); }
+
+    /* pipeline status in nav */
+    .pipe-status {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.3rem 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.75rem;
+    }
+    .pipe-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 5px var(--green);
+      flex-shrink: 0;
+    }
+    .pipe-dot.running { background: var(--amber); box-shadow: 0 0 5px var(--amber); animation: blink 1.2s ease-in-out infinite; }
+    .pipe-dot.error   { background: var(--red);   box-shadow: 0 0 5px var(--red); }
+    .pipe-label { color: var(--text-2); }
+    .pipe-label strong { color: var(--text-1); font-weight: 600; }
+
+    /* auto toggle */
+    .auto-wrap { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--text-2); }
+    .toggle { position: relative; width: 34px; height: 19px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .slider {
+      position: absolute; inset: 0;
+      background: var(--surface-3); border-radius: 19px; cursor: pointer; transition: background 0.2s;
+    }
+    .slider::before {
+      content: ''; position: absolute;
+      width: 13px; height: 13px; left: 3px; bottom: 3px;
+      background: var(--text-3); border-radius: 50%; transition: 0.2s;
+    }
+    .toggle input:checked + .slider { background: var(--green); }
+    .toggle input:checked + .slider::before { background: white; transform: translateX(15px); }
+    #auto-state { font-weight: 600; min-width: 18px; }
+    #auto-state.on { color: var(--green); }
+
+    .nav-right { display: flex; align-items: center; gap: 0.75rem; }
+
+    /* run button */
+    .btn-run {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.38rem 0.9rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white; border: none; border-radius: var(--r);
+      font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      transition: all 0.15s;
+      box-shadow: 0 1px 2px rgba(99,102,241,0.3);
+      white-space: nowrap;
+    }
+    .btn-run:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(99,102,241,0.45); }
+    .btn-run:active:not(:disabled) { transform: none; }
+    .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-run.running { background: linear-gradient(135deg, #b45309, var(--amber)); }
+
+    #nav-refresh { font-size: 0.7rem; color: var(--text-3); white-space: nowrap; }
+
+    .nav-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.68rem; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .nav-uname { font-size: 0.75rem; color: var(--text-2); }
+
+    .btn-logout {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.28rem 0.65rem;
+      color: var(--text-2); border: 1px solid var(--border);
+      background: transparent; border-radius: 6px;
+      font-size: 0.72rem; font-weight: 500; cursor: pointer;
+      transition: all 0.12s; text-decoration: none;
+    }
+    .btn-logout:hover { color: var(--red); border-color: rgba(248,81,73,0.3); background: var(--red-bg); }
+
+    .btn-icon {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-2); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.12s;
+    }
+    .btn-icon:hover { background: var(--surface-2); color: var(--text-1); }
+
+    /* ───── SETTINGS MODAL ───── */
+    .settings-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(1,4,9,0.75); backdrop-filter: blur(4px); z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .settings-backdrop.open { display: flex; }
+
+    .settings-modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; width: 100%; max-width: 520px; margin: 1rem;
+      box-shadow: var(--sh-lg); animation: modalIn 0.2s cubic-bezier(0.22,1,0.36,1);
+      max-height: 90vh; display: flex; flex-direction: column;
+    }
+    @keyframes modalIn { from { opacity:0; transform:scale(0.96) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+
+    .sm-header {
+      padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .sm-title { font-size: 0.95rem; font-weight: 700; color: var(--text-1); }
+
+    .sm-tabs {
+      display: flex; border-bottom: 1px solid var(--border);
+      flex-shrink: 0; padding: 0 1.5rem;
+    }
+    .sm-tab {
+      padding: 0.75rem 0; margin-right: 1.5rem; border: none; border-bottom: 2px solid transparent;
+      background: transparent; color: var(--text-2); font-size: 0.8rem; font-weight: 500;
+      cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .sm-tab:hover { color: var(--text-1); }
+    .sm-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+    .sm-body { flex: 1; overflow-y: auto; padding: 1.5rem; }
+
+    .sm-section { margin-bottom: 2rem; }
+    .sm-section:last-child { margin-bottom: 0; }
+    .sm-section-title { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-3); margin-bottom: 1rem; }
+
+    .sm-field { margin-bottom: 0.9rem; }
+    .sm-label { font-size: 0.78rem; font-weight: 500; color: var(--text-2); margin-bottom: 0.4rem; display: block; }
+    .sm-input {
+      width: 100%; padding: 0.62rem 0.85rem;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--r); color: var(--text-1); font-size: 0.85rem; font-family: inherit;
+      outline: none; transition: border-color 0.15s;
+    }
+    .sm-input:focus { border-color: var(--border-hi); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    .sm-input::placeholder { color: var(--text-3); }
+
+    .sm-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.5rem 1.1rem; border-radius: var(--r);
+      background: var(--accent-bg); border: 1px solid rgba(99,102,241,0.25);
+      color: var(--accent); font-size: 0.8rem; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: all 0.12s;
+    }
+    .sm-btn:hover { background: rgba(99,102,241,0.2); }
+    .sm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .sm-btn.danger { background: var(--red-bg); border-color: rgba(248,81,73,0.2); color: var(--red); }
+    .sm-btn.danger:hover { background: rgba(248,81,73,0.2); }
+
+    .sm-msg { font-size: 0.78rem; margin-top: 0.6rem; padding: 0.5rem 0.75rem; border-radius: 7px; display: none; }
+    .sm-msg.ok  { background: rgba(63,185,80,0.1); color: #86efac; border: 1px solid rgba(63,185,80,0.2); }
+    .sm-msg.err { background: var(--red-bg); color: #ffa198; border: 1px solid rgba(248,81,73,0.2); }
+
+    /* users table */
+    .users-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .users-table th { text-align: left; color: var(--text-3); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0 0 0.6rem; border-bottom: 1px solid var(--border); }
+    .users-table td { padding: 0.7rem 0; border-bottom: 1px solid var(--border); color: var(--text-2); vertical-align: middle; }
+    .users-table tr:last-child td { border-bottom: none; }
+    .u-name { color: var(--text-1); font-weight: 500; }
+    .u-badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.65rem; font-weight: 600; }
+    .u-badge.admin { background: var(--accent-bg); color: var(--accent); }
+    .u-badge.user  { background: var(--surface-3); color: var(--text-3); }
+
+    /* dev otp box */
+    .dev-otp-box {
+      background: var(--amber-bg); border: 1px solid rgba(210,153,34,0.3);
+      border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.78rem;
+      color: var(--amber); margin-top: 0.75rem; display: none;
+    }
+    .dev-otp-code { font-family: monospace; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.15em; }
+
+    /* ───── STATS ───── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .stat {
+      padding: 1rem 1.25rem;
+      border-right: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.75rem;
+      position: relative; overflow: hidden;
+    }
+    .stat:last-child { border-right: none; }
+    .stat::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+      height: 2px; border-radius: 2px 2px 0 0; background: transparent;
+    }
+    .stat.s-indigo::after { background: var(--accent); }
+    .stat.s-green::after  { background: var(--green); }
+    .stat.s-blue::after   { background: var(--blue); }
+    .stat.s-purple::after { background: var(--accent-2); }
+    .stat.s-amber::after  { background: var(--amber); }
+    .stat.s-red::after    { background: var(--red); }
+
+    .stat-icon-box {
+      width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .stat.s-indigo .stat-icon-box { background: var(--accent-bg); color: var(--accent); }
+    .stat.s-green  .stat-icon-box { background: var(--green-bg);  color: var(--green); }
+    .stat.s-blue   .stat-icon-box { background: var(--blue-bg);   color: var(--blue); }
+    .stat.s-purple .stat-icon-box { background: var(--purple-bg); color: var(--accent-2); }
+    .stat.s-amber  .stat-icon-box { background: var(--amber-bg);  color: var(--amber); }
+    .stat.s-red    .stat-icon-box { background: var(--red-bg);    color: var(--red); }
+
+    .stat-info { min-width: 0; }
+    .stat-num {
+      font-size: 1.45rem; font-weight: 800; letter-spacing: -0.04em;
+      line-height: 1; margin-bottom: 3px; color: var(--text-1);
+    }
+    .stat.s-indigo .stat-num { color: var(--accent); }
+    .stat.s-green  .stat-num { color: var(--green); }
+    .stat.s-red    .stat-num { color: var(--red); }
+    .stat-label {
+      font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-3);
+    }
+
+    /* ───── MAIN ───── */
+    .main {
+      max-width: 1200px; margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .list-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap;
+    }
+
+    .list-head-left { display: flex; align-items: center; gap: 0.75rem; }
+    .list-title { font-size: 0.9rem; font-weight: 700; color: var(--text-1); }
+    .list-count {
+      font-size: 0.7rem; font-weight: 600; color: var(--text-2);
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 2px 10px; border-radius: 20px;
+    }
+
+    /* search */
+    .search-wrap {
+      position: relative; flex: 1; max-width: 280px;
+    }
+    .search-icon {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      color: var(--text-3); pointer-events: none; display: flex;
+    }
+    #search-input {
+      width: 100%; padding: 0.42rem 0.75rem 0.42rem 2.1rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); color: var(--text-1);
+      font-size: 0.78rem; font-family: inherit; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    #search-input:focus { border-color: var(--border-hi); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    #search-input::placeholder { color: var(--text-3); }
+
+    /* category filters */
+    .filters {
+      display: flex; gap: 0.4rem; flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .filter-chip {
+      padding: 4px 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; font-size: 0.72rem; font-weight: 500;
+      color: var(--text-2); cursor: pointer; transition: all 0.12s;
+      white-space: nowrap;
+    }
+    .filter-chip:hover { border-color: var(--accent); color: var(--text-1); }
+    .filter-chip.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+    /* ───── ARTICLE CARD ───── */
+    .article-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid transparent;
+      border-radius: var(--r-lg);
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.5rem;
+      display: flex; align-items: center; gap: 1rem;
+      box-shadow: var(--sh);
+      transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+      cursor: default;
+    }
+    .article-card:hover {
+      border-color: var(--border-hi);
+      border-left-color: inherit;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .article-card.cred-hi { border-left-color: var(--green); }
+    .article-card.cred-mid { border-left-color: var(--amber); }
+    .article-card.cred-lo  { border-left-color: var(--red); }
+
+    .card-num {
+      width: 24px; height: 24px; border-radius: 6px;
+      background: var(--surface-2); color: var(--text-3);
+      font-size: 0.68rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    .card-body { flex: 1; min-width: 0; }
+
+    .card-headline {
+      font-size: 0.875rem; font-weight: 600; color: var(--text-1);
+      margin-bottom: 0.35rem; line-height: 1.45;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-row {
+      display: flex; align-items: center; gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      padding: 2px 8px; border-radius: 20px;
+      font-size: 0.68rem; font-weight: 600; white-space: nowrap;
+    }
+    .b-cat   { background: var(--blue-bg);   color: var(--blue);   border: 1px solid rgba(88,166,255,0.15); }
+    .b-hi    { background: var(--green-bg);  color: var(--green);  border: 1px solid rgba(63,185,80,0.15); }
+    .b-mid   { background: var(--amber-bg);  color: var(--amber);  border: 1px solid rgba(210,153,34,0.15); }
+    .b-lo    { background: var(--red-bg);    color: var(--red);    border: 1px solid rgba(248,81,73,0.15); }
+
+    .meta-sep { color: var(--text-3); font-size: 0.55rem; }
+    .meta-txt { font-size: 0.72rem; color: var(--text-3); }
+    .meta-link { font-size: 0.72rem; color: var(--accent); transition: color 0.1s; }
+    .meta-link:hover { color: var(--accent-2); }
+
+    .card-actions {
+      display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.35rem 0.75rem; border-radius: var(--r);
+      border: 1px solid transparent; cursor: pointer;
+      font-size: 0.75rem; font-weight: 500; transition: all 0.12s;
+      white-space: nowrap;
+    }
+    .btn-ghost {
+      background: var(--surface-2); color: var(--text-2); border-color: var(--border);
+    }
+    .btn-ghost:hover { background: var(--surface-3); color: var(--text-1); }
+
+    .btn-primary {
+      background: var(--accent-bg); color: var(--accent); border-color: rgba(99,102,241,0.25);
+    }
+    .btn-primary:hover { background: rgba(99,102,241,0.2); }
+    .btn-primary.copied { background: var(--green-bg); color: var(--green); border-color: rgba(63,185,80,0.25); }
+
+    .btn-danger {
+      background: var(--red-bg); color: var(--red); border-color: rgba(248,81,73,0.2);
+    }
+    .btn-danger:hover { background: rgba(248,81,73,0.2); }
+
+    /* ───── SKELETON ───── */
+    .skeleton-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-lg); padding: 1rem 1.25rem;
+      margin-bottom: 0.5rem; display: flex; align-items: center; gap: 1rem;
+    }
+    .sk { background: var(--surface-3); border-radius: 4px; animation: shimmer 1.5s ease-in-out infinite; }
+    .sk-num  { width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0; }
+    .sk-body { flex: 1; }
+    .sk-line { height: 10px; margin-bottom: 8px; }
+    .sk-line.w-70 { width: 70%; }
+    .sk-line.w-40 { width: 40%; }
+    .sk-line.w-55 { width: 55%; margin-bottom: 0; }
+    .sk-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+    .sk-btn { width: 60px; height: 28px; border-radius: 8px; }
+
+    @keyframes shimmer {
+      0%, 100% { opacity: 0.5; }
+      50%       { opacity: 1; }
+    }
+
+    /* ───── EMPTY STATE ───── */
+    .empty {
+      text-align: center; padding: 5rem 2rem;
+      border: 1px dashed var(--border); border-radius: var(--r-lg);
+      background: var(--surface);
+    }
+    .empty-icon {
+      width: 48px; height: 48px; margin: 0 auto 1rem;
+      background: var(--surface-2); border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-3);
+    }
+    .empty-h { font-size: 0.95rem; font-weight: 700; color: var(--text-2); margin-bottom: 0.35rem; }
+    .empty-p { font-size: 0.82rem; color: var(--text-3); }
+
+    /* ───── DRAWER OVERLAY ───── */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(1,4,9,0.7); backdrop-filter: blur(4px); z-index: 99;
+    }
+    .overlay.open { display: block; }
+
+    /* ───── ARTICLE PANEL ───── */
+    .panel {
+      position: fixed; top: 0; right: -110%;
+      width: min(740px, 100vw); height: 100vh;
+      background: var(--surface); border-left: 1px solid var(--border);
+      z-index: 100; display: flex; flex-direction: column;
+      transition: right 0.3s cubic-bezier(0.32,0,0.15,1);
+    }
+    .panel.open { right: 0; }
+
+    .panel-header {
+      padding: 1.25rem 1.5rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface); flex-shrink: 0;
+    }
+    .panel-toprow {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem;
+    }
+    #panel-headline {
+      font-size: 1rem; font-weight: 700; color: var(--text-1);
+      line-height: 1.5; flex: 1;
+    }
+    .panel-close {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      cursor: pointer; color: var(--text-2); font-size: 0.9rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.12s;
+    }
+    .panel-close:hover { background: var(--surface-3); color: var(--text-1); }
+    #panel-meta { margin-bottom: 0.85rem; }
+    .panel-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    .panel-body { flex: 1; overflow-y: auto; }
+    #panel-tab-article { padding: 1.5rem; }
+
+    .article-html { font-size: 0.875rem; line-height: 1.85; color: var(--text-1); }
+    .article-html p { margin-bottom: 1rem; }
+    .article-html h1, .article-html h2, .article-html h3 { margin: 1.5rem 0 0.6rem; font-weight: 700; color: var(--text-1); }
+    .article-html h1 { font-size: 1.2rem; }
+    .article-html h2 { font-size: 1.05rem; }
+    .article-html h3 { font-size: 0.95rem; }
+    .article-html a  { color: var(--accent); text-decoration: underline; }
+    .article-html ul, .article-html ol { margin: 0.75rem 0 0.75rem 1.5rem; }
+    .article-html li { margin-bottom: 0.4rem; }
+    .article-html blockquote {
+      border-left: 3px solid var(--accent); padding-left: 1rem;
+      color: var(--text-2); margin: 1rem 0;
+    }
+
+    /* ───── REJECT MODAL ───── */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(1,4,9,0.75); backdrop-filter: blur(4px); z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; width: 100%; max-width: 440px;
+      margin: 1rem; box-shadow: var(--sh-lg);
+      animation: modalIn 0.2s cubic-bezier(0.22,1,0.36,1);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.5rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-title { font-size: 0.95rem; font-weight: 700; color: var(--text-1); }
+    .modal-body { padding: 1.25rem 1.5rem; }
+    .modal-desc { font-size: 0.82rem; color: var(--text-2); margin-bottom: 1rem; line-height: 1.6; }
+    #reject-reason {
+      width: 100%; padding: 0.7rem 0.9rem; min-height: 90px; resize: vertical;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--r); color: var(--text-1); font-size: 0.83rem;
+      font-family: inherit; outline: none; line-height: 1.6; transition: border-color 0.15s;
+    }
+    #reject-reason:focus { border-color: var(--border-hi); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    #reject-reason::placeholder { color: var(--text-3); }
+
+    .modal-footer {
+      padding: 0.9rem 1.5rem 1.25rem;
+      display: flex; gap: 0.6rem; justify-content: flex-end;
+    }
+    .btn-modal-cancel {
+      padding: 0.5rem 1rem; border-radius: var(--r);
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text-2); font-size: 0.82rem; font-weight: 500;
+      cursor: pointer; transition: all 0.12s;
+    }
+    .btn-modal-cancel:hover { background: var(--surface-3); color: var(--text-1); }
+    .btn-modal-reject {
+      padding: 0.5rem 1rem; border-radius: var(--r);
+      background: var(--red-bg); border: 1px solid rgba(248,81,73,0.25);
+      color: var(--red); font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; transition: all 0.12s;
+    }
+    .btn-modal-reject:hover { background: rgba(248,81,73,0.2); }
+
+    /* ───── TOAST ───── */
+    .toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.65rem 1.1rem;
+      background: var(--surface-3); border: 1px solid var(--border);
+      color: var(--text-1); border-radius: 10px;
+      font-size: 0.8rem; font-weight: 500; box-shadow: var(--sh-lg);
+      transform: translateY(80px); opacity: 0;
+      transition: all 0.25s cubic-bezier(0.4,0,0.2,1); z-index: 300; pointer-events: none;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-icon { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+    .toast.t-ok   .toast-icon { background: var(--green); color: #0d1117; }
+    .toast.t-err  .toast-icon { background: var(--red);   color: white; }
+    .toast.t-info .toast-icon { background: var(--blue);  color: #0d1117; }
+
+    /* ───── SEO PANEL ───── */
+    .panel-tabs {
+      display: flex; border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem; flex-shrink: 0; background: var(--surface);
+    }
+    .panel-tab {
+      padding: 0.65rem 0; margin-right: 1.5rem;
+      border: none; border-bottom: 2px solid transparent;
+      background: transparent; color: var(--text-2);
+      font-size: 0.78rem; font-weight: 500; cursor: pointer;
+      font-family: inherit; transition: all 0.15s;
+    }
+    .panel-tab:hover { color: var(--text-1); }
+    .panel-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+    .seo-panel { padding: 1.5rem; }
+
+    .seo-top {
+      display: flex; align-items: center; gap: 1.5rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .seo-gauge-wrap {
+      flex-shrink: 0; position: relative; width: 96px; height: 96px;
+    }
+    .seo-gauge-svg { transform: rotate(-90deg); }
+    .seo-gauge-bg  { fill: none; stroke: var(--surface-3); stroke-width: 8; }
+    .seo-gauge-arc { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+    .seo-gauge-label {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .seo-gauge-num  { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+    .seo-gauge-sub  { font-size: 0.6rem; color: var(--text-3); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+
+    .seo-summary { flex: 1; min-width: 0; }
+    .seo-grade {
+      display: inline-block; padding: 2px 10px; border-radius: 6px;
+      font-size: 0.72rem; font-weight: 700; margin-bottom: 0.4rem;
+    }
+    .seo-grade.g-A { background: var(--green-bg);  color: var(--green); }
+    .seo-grade.g-B { background: var(--blue-bg);   color: var(--blue); }
+    .seo-grade.g-C { background: var(--amber-bg);  color: var(--amber); }
+    .seo-grade.g-D { background: var(--red-bg);    color: #f97316; }
+    .seo-grade.g-F { background: var(--red-bg);    color: var(--red); }
+
+    .seo-hint { font-size: 0.78rem; color: var(--text-2); line-height: 1.5; }
+
+    .seo-checks { display: flex; flex-direction: column; gap: 0.4rem; }
+
+    .seo-check {
+      display: flex; align-items: flex-start; gap: 0.65rem;
+      padding: 0.65rem 0.85rem; border-radius: var(--r);
+      background: var(--surface-2); border: 1px solid var(--border);
+    }
+    .seo-check-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
+    }
+    .seo-check-dot.pass { background: var(--green); box-shadow: 0 0 4px var(--green); }
+    .seo-check-dot.warn { background: var(--amber); box-shadow: 0 0 4px var(--amber); }
+    .seo-check-dot.fail { background: var(--red);   box-shadow: 0 0 4px var(--red); }
+
+    .seo-check-body { flex: 1; min-width: 0; }
+    .seo-check-row  { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 2px; }
+    .seo-check-name { font-size: 0.78rem; font-weight: 600; color: var(--text-1); }
+    .seo-check-pts  { font-size: 0.72rem; font-weight: 600; color: var(--text-3); white-space: nowrap; }
+    .seo-check-tip  { font-size: 0.72rem; color: var(--text-2); line-height: 1.45; }
+
+    /* ───── ANIMATIONS ───── */
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    @keyframes spin   { to { transform: rotate(360deg); } }
+    .spin { display: inline-block; animation: spin 0.9s linear infinite; }
+
+    /* ───── PIPELINE CONFIG MODAL ───── */
+    .pc-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(1,4,9,0.8); backdrop-filter: blur(6px); z-index: 200;
+      align-items: center; justify-content: center; padding: 1rem;
+    }
+    .pc-backdrop.open { display: flex; }
+
+    .pc-modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; width: 100%; max-width: 540px;
+      box-shadow: var(--sh-lg); animation: modalIn 0.2s cubic-bezier(0.22,1,0.36,1);
+      display: flex; flex-direction: column; max-height: 90vh;
+    }
+
+    .pc-header {
+      padding: 1.4rem 1.5rem 1.1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0;
+    }
+    .pc-title     { font-size: 1rem; font-weight: 700; color: var(--text-1); }
+    .pc-subtitle  { font-size: 0.75rem; color: var(--text-3); margin-top: 2px; }
+
+    .pc-body { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.4rem; }
+
+    .pc-section { display: flex; flex-direction: column; gap: 0.5rem; }
+    .pc-label {
+      font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-3);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .pc-val {
+      font-size: 0.82rem; font-weight: 700; color: var(--accent);
+      text-transform: none; letter-spacing: 0; min-width: 60px; text-align: right;
+    }
+
+    /* slider */
+    .pc-slider {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 5px; border-radius: 3px; outline: none;
+      background: var(--surface-3); cursor: pointer;
+    }
+    .pc-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 17px; height: 17px; border-radius: 50%;
+      background: var(--accent); cursor: pointer;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+      transition: box-shadow 0.15s;
+    }
+    .pc-slider::-webkit-slider-thumb:hover { box-shadow: 0 0 0 5px rgba(99,102,241,0.3); }
+    .pc-slider::-moz-range-thumb {
+      width: 17px; height: 17px; border-radius: 50%; border: none;
+      background: var(--accent); cursor: pointer;
+    }
+    .pc-slider-track {
+      position: relative; height: 5px; background: var(--surface-3); border-radius: 3px; overflow: hidden;
+    }
+
+    /* slider tick labels */
+    .pc-ticks {
+      display: flex; justify-content: space-between;
+      font-size: 0.65rem; color: var(--text-3); margin-top: 3px; padding: 0 1px;
+    }
+
+    /* select */
+    .pc-select {
+      width: 100%; padding: 0.6rem 0.85rem;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--r); color: var(--text-1); font-size: 0.85rem;
+      font-family: inherit; outline: none; cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .pc-select:focus { border-color: var(--border-hi); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+    /* stage toggles */
+    .pc-stages { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .pc-stage-btn {
+      flex: 1; min-width: 120px; padding: 0.65rem 1rem;
+      border: 1px solid var(--border); border-radius: var(--r);
+      background: var(--surface-2); cursor: pointer;
+      display: flex; align-items: center; gap: 0.5rem;
+      font-family: inherit; font-size: 0.78rem; font-weight: 500; color: var(--text-2);
+      transition: all 0.12s;
+    }
+    .pc-stage-btn.active {
+      background: var(--accent-bg); border-color: rgba(99,102,241,0.35); color: var(--accent);
+    }
+    .pc-stage-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: var(--surface-3); transition: background 0.12s;
+    }
+    .pc-stage-btn.active .pc-stage-dot { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+
+    /* summary row */
+    .pc-summary {
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 0.75rem 1rem;
+      font-size: 0.78rem; color: var(--text-2); line-height: 1.6;
+    }
+    .pc-summary strong { color: var(--text-1); }
+
+    .pc-footer {
+      padding: 1rem 1.5rem 1.4rem;
+      display: flex; gap: 0.6rem; justify-content: flex-end;
+      border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+    .pc-btn-cancel {
+      padding: 0.55rem 1.1rem; border-radius: var(--r);
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text-2); font-size: 0.82rem; font-weight: 500;
+      cursor: pointer; font-family: inherit; transition: all 0.12s;
+    }
+    .pc-btn-cancel:hover { background: var(--surface-3); color: var(--text-1); }
+
+    .pc-btn-run {
+      padding: 0.55rem 1.4rem; border-radius: var(--r);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border: none; color: white; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      display: flex; align-items: center; gap: 0.4rem;
+      transition: all 0.15s; box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+    }
+    .pc-btn-run:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(99,102,241,0.45); }
+    .pc-btn-run:active { transform: none; }
+
+    /* stage log (live progress) */
+    .pc-log {
+      display: none; padding: 0.75rem 1rem;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--r); font-size: 0.75rem; font-family: monospace;
+      line-height: 1.9; color: var(--text-2); max-height: 140px; overflow-y: auto;
+    }
+    .pc-log.visible { display: block; }
+    .pc-log-line.ok   { color: var(--green); }
+    .pc-log-line.err  { color: var(--red); }
+    .pc-log-line.info { color: var(--blue); }
+
+    /* ───── RESPONSIVE ───── */
+    @media (max-width: 900px)  {
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      .nav-left .auto-wrap, #nav-refresh { display: none; }
+    }
+    @media (max-width: 600px)  {
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      .nav { padding: 0 1rem; }
+      .main { padding: 1rem; }
+      .card-actions { flex-direction: column; gap: 0.3rem; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>News Pipeline — Editor Dashboard</h1>
-    <span id="refresh-time" style="font-size:0.8rem;color:#a0aec0;">Loading…</span>
-  </header>
 
-  <div class="stats-bar" id="stats-bar">
-    <div class="stat"><div class="stat-value" id="stat-pending">-</div><div class="stat-label">Pending Review</div></div>
-    <div class="stat"><div class="stat-value" id="stat-approved">-</div><div class="stat-label">Approved</div></div>
-    <div class="stat"><div class="stat-value" id="stat-published">-</div><div class="stat-label">Published</div></div>
-    <div class="stat"><div class="stat-value" id="stat-total">-</div><div class="stat-label">Total Stories</div></div>
-    <div class="stat"><div class="stat-value" id="stat-verified">-</div><div class="stat-label">Verified</div></div>
-    <div class="stat"><div class="stat-value" id="stat-rejected">-</div><div class="stat-label">Rejected</div></div>
-  </div>
-
-  <div class="container">
-    <div id="articles-list"></div>
-  </div>
-
-  <div id="detail-panel">
-    <button class="close-btn" onclick="closeDetail()">×</button>
-    <h2 id="detail-headline"></h2>
-    <div class="article-meta" id="detail-meta" style="margin-bottom:1rem;"></div>
-    <div class="article-body" id="detail-body"></div>
-    <div style="margin-top:1rem;display:flex;gap:0.5rem;">
-      <button class="btn-approve" id="detail-approve-btn">Approve</button>
-      <button class="btn-reject" id="detail-reject-btn">Reject</button>
+<!-- ── NAV ── -->
+<nav class="nav">
+  <div class="nav-left">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 6h16M4 12h16M4 18h7"/>
+        </svg>
+      </div>
+      <span class="brand-name">News Pipeline</span>
+    </div>
+    <div class="nav-sep"></div>
+    <div class="pipe-status">
+      <div class="pipe-dot" id="pipe-dot"></div>
+      <span class="pipe-label" id="pipe-label"><strong>Idle</strong></span>
+    </div>
+    <div class="auto-wrap">
+      <span>Auto</span>
+      <label class="toggle">
+        <input type="checkbox" id="auto-toggle" onchange="setAutoMode(this.checked)">
+        <span class="slider"></span>
+      </label>
+      <span id="auto-state">Off</span>
     </div>
   </div>
 
-  <script>
-    const API_KEY = "{{ api_key }}";
-    const HEADERS = { 'Content-Type': 'application/json', 'X-API-Key': API_KEY };
-    let currentDraftId = null;
+  <div class="nav-right">
+    <span id="nav-refresh"></span>
+    <button class="btn-run" id="run-btn" onclick="runPipeline()">
+      <svg id="run-icon-svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <span id="run-text">Run Pipeline</span>
+    </button>
+    <div class="nav-sep"></div>
+    <div class="nav-avatar">{{ username[0] | upper if username else 'A' }}</div>
+    <span class="nav-uname">{{ username or 'admin' }}</span>
+    <button class="btn-icon" onclick="openSettings()" title="Settings">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <a href="/logout" class="btn-logout">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign out
+    </a>
+  </div>
+</nav>
 
-    async function loadStats() {
-      const res = await fetch('/stats/', { headers: HEADERS });
-      const data = await res.json();
-      document.getElementById('stat-pending').textContent = data.pending_review;
-      document.getElementById('stat-approved').textContent = data.approved;
-      document.getElementById('stat-published').textContent = data.published;
-      document.getElementById('stat-total').textContent = data.total_stories;
-      document.getElementById('stat-verified').textContent = data.verified;
-      document.getElementById('stat-rejected').textContent = data.rejected_checks;
-      document.getElementById('refresh-time').textContent = 'Updated ' + new Date().toLocaleTimeString();
-    }
+<!-- ── STATS ── -->
+<div class="stats-bar">
+  <div class="stat s-indigo">
+    <div class="stat-icon-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div class="stat-info">
+      <div class="stat-num" id="stat-pending">—</div>
+      <div class="stat-label">Pending Review</div>
+    </div>
+  </div>
 
-    async function loadArticles() {
-      const res = await fetch('/articles/', { headers: HEADERS });
-      const articles = await res.json();
-      const list = document.getElementById('articles-list');
-      if (!articles.length) {
-        list.innerHTML = '<div class="empty"><p>No articles pending review.</p><p style="margin-top:0.5rem;font-size:0.85rem;">Run the pipeline to generate new drafts.</p></div>';
-        return;
-      }
-      list.innerHTML = articles.map(a => `
-        <div class="article-card">
-          <div>
-            <div class="article-title">${a.headline}</div>
-            <div class="article-meta">
-              <span class="badge badge-category">${a.category}</span>
-              <span class="badge badge-score">Score ${a.credibility_score}</span>
-              ${a.word_count} words · ${a.focus_keyword || 'no keyword'}
-            </div>
+  <div class="stat s-purple">
+    <div class="stat-icon-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+    </div>
+    <div class="stat-info">
+      <div class="stat-num" id="stat-total">—</div>
+      <div class="stat-label">Total Stories</div>
+    </div>
+  </div>
+  <div class="stat s-amber">
+    <div class="stat-icon-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </div>
+    <div class="stat-info">
+      <div class="stat-num" id="stat-verified">—</div>
+      <div class="stat-label">Fact Checked</div>
+    </div>
+  </div>
+  <div class="stat s-red">
+    <div class="stat-icon-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div class="stat-info">
+      <div class="stat-num" id="stat-rejected">—</div>
+      <div class="stat-label">Rejected</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN CONTENT ── -->
+<main class="main">
+  <div class="list-head">
+    <div class="list-head-left">
+      <span class="list-title">Pending Review</span>
+      <span class="list-count" id="list-count">Loading…</span>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input type="text" id="search-input" placeholder="Search articles…" oninput="filterArticles()" />
+    </div>
+  </div>
+
+  <div class="filters" id="filter-bar"></div>
+  <div id="articles-list"></div>
+</main>
+
+<!-- ── OVERLAY ── -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<!-- ── ARTICLE PANEL ── -->
+<div class="panel" id="panel">
+  <div class="panel-header">
+    <div class="panel-toprow">
+      <div id="panel-headline"></div>
+      <button class="panel-close" onclick="closePanel()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div id="panel-meta"></div>
+    <div class="panel-actions">
+      <button class="btn btn-primary" id="panel-copy-btn" onclick="copyArticle()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span id="panel-copy-text">Copy Article</span>
+      </button>
+      <button class="btn btn-danger" id="panel-reject-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Reject
+      </button>
+    </div>
+  </div>
+  <!-- Panel tabs -->
+  <div class="panel-tabs">
+    <button class="panel-tab active" id="ptab-article" onclick="switchPanelTab('article')">Article</button>
+    <button class="panel-tab" id="ptab-seo" onclick="switchPanelTab('seo')">
+      SEO Analysis
+      <span id="ptab-seo-badge" style="margin-left:6px;display:none;"></span>
+    </button>
+  </div>
+  <div class="panel-body" id="panel-body-wrap">
+    <!-- Article tab -->
+    <div id="panel-tab-article">
+      <div class="article-html" id="panel-body"></div>
+    </div>
+    <!-- SEO tab -->
+    <div id="panel-tab-seo" style="display:none;">
+      <div class="seo-panel" id="seo-panel-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── REJECT MODAL ── -->
+<div class="modal-backdrop" id="reject-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Reject Article</span>
+      <button class="panel-close" onclick="closeRejectModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">This article will be marked as rejected and removed from the review queue. You can optionally provide a reason.</p>
+      <textarea id="reject-reason" placeholder="Reason for rejection (optional)…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="closeRejectModal()">Cancel</button>
+      <button class="btn-modal-reject" onclick="confirmReject()">Reject Article</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SETTINGS MODAL ── -->
+<div class="settings-backdrop" id="settings-modal">
+  <div class="settings-modal">
+    <div class="sm-header">
+      <span class="sm-title">Settings</span>
+      <button class="panel-close" onclick="closeSettings()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="sm-tabs">
+      <button class="sm-tab active" onclick="smTab('profile')">My Profile</button>
+      <button class="sm-tab" onclick="smTab('team')" id="team-tab-btn">Team</button>
+    </div>
+    <div class="sm-body">
+
+      <!-- PROFILE TAB -->
+      <div id="sm-profile">
+        <div class="sm-section">
+          <div class="sm-section-title">Change Username</div>
+          <div class="sm-field">
+            <label class="sm-label">New username</label>
+            <input class="sm-input" id="new-username" placeholder="Enter new username" />
           </div>
-          <div class="actions">
-            <button class="btn-view" onclick="viewArticle(${a.id})">View</button>
-            <button class="btn-approve" onclick="approve(${a.id})">Approve</button>
-            <button class="btn-reject" onclick="reject(${a.id})">Reject</button>
+          <button class="sm-btn" onclick="changeUsername()">Save Username</button>
+          <div class="sm-msg" id="username-msg"></div>
+        </div>
+
+        <div class="sm-section">
+          <div class="sm-section-title">Change Password</div>
+          <div class="sm-field">
+            <label class="sm-label">Current password</label>
+            <input class="sm-input" type="password" id="cur-password" placeholder="••••••••" />
+          </div>
+          <div class="sm-field">
+            <label class="sm-label">New password</label>
+            <input class="sm-input" type="password" id="new-password" placeholder="Min 8 characters" />
+          </div>
+          <div class="sm-field">
+            <label class="sm-label">Confirm new password</label>
+            <input class="sm-input" type="password" id="confirm-password" placeholder="Repeat new password" />
+          </div>
+          <button class="sm-btn" onclick="changePassword()">Save Password</button>
+          <div class="sm-msg" id="password-msg"></div>
+        </div>
+      </div>
+
+      <!-- TEAM TAB -->
+      <div id="sm-team" style="display:none">
+        <div class="sm-section">
+          <div class="sm-section-title">Invite New User</div>
+          <div class="sm-field">
+            <label class="sm-label">Email address</label>
+            <input class="sm-input" type="email" id="invite-email" placeholder="colleague@example.com" />
+          </div>
+          <button class="sm-btn" onclick="sendInvite()">Send Invite Email</button>
+          <div class="sm-msg" id="invite-msg"></div>
+          <div class="dev-otp-box" id="dev-otp-box">
+            <div style="margin-bottom:4px;font-weight:600;">Dev mode — OTP (SMTP not configured)</div>
+            <div>Share this code with the user: <span class="dev-otp-code" id="dev-otp-val"></span></div>
           </div>
         </div>
-      `).join('');
+
+        <div class="sm-section">
+          <div class="sm-section-title">All Users</div>
+          <div id="users-list-wrap">
+            <div style="color:var(--text-3);font-size:0.8rem;">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── PIPELINE CONFIG MODAL ── -->
+<div class="pc-backdrop" id="pc-modal">
+  <div class="pc-modal">
+    <div class="pc-header">
+      <div>
+        <div class="pc-title">Configure Pipeline Run</div>
+        <div class="pc-subtitle">Customise what the pipeline fetches and writes this run.</div>
+      </div>
+      <button class="panel-close" onclick="closePCModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="pc-body">
+
+      <!-- Article count -->
+      <div class="pc-section">
+        <label class="pc-label">
+          Number of Articles
+          <span class="pc-val" id="pc-count-val">10</span>
+        </label>
+        <input type="range" class="pc-slider" id="pc-count"
+               min="1" max="50" step="1" value="10"
+               oninput="pcSync('count', this.value)">
+        <div class="pc-ticks"><span>1</span><span>10</span><span>25</span><span>50</span></div>
+      </div>
+
+      <!-- Category -->
+      <div class="pc-section">
+        <label class="pc-label">Category / Topic</label>
+        <select class="pc-select" id="pc-category" onchange="pcUpdateSummary()">
+          <option value="all">All Categories</option>
+          <option value="technology">Technology</option>
+          <option value="finance">Finance</option>
+          <option value="politics">Politics</option>
+          <option value="sports">Sports</option>
+          <option value="health">Health</option>
+          <option value="business">Business</option>
+          <option value="science">Science</option>
+          <option value="entertainment">Entertainment</option>
+        </select>
+      </div>
+
+      <!-- Word length -->
+      <div class="pc-section">
+        <label class="pc-label">
+          Article Word Length
+          <span class="pc-val" id="pc-words-val">700 words</span>
+        </label>
+        <input type="range" class="pc-slider" id="pc-words"
+               min="300" max="2000" step="50" value="700"
+               oninput="pcSync('words', this.value)">
+        <div class="pc-ticks"><span>300</span><span>700</span><span>1200</span><span>2000</span></div>
+      </div>
+
+      <!-- Credibility threshold -->
+      <div class="pc-section">
+        <label class="pc-label">
+          Min Credibility Score
+          <span class="pc-val" id="pc-cred-val">40 / 100</span>
+        </label>
+        <input type="range" class="pc-slider" id="pc-cred"
+               min="0" max="100" step="5" value="40"
+               oninput="pcSync('cred', this.value)">
+        <div class="pc-ticks"><span>0</span><span>40</span><span>70</span><span>100</span></div>
+      </div>
+
+      <!-- AI Model -->
+      <div class="pc-section">
+        <label class="pc-label">AI Writing Model</label>
+        <select class="pc-select" id="pc-model" onchange="pcUpdateSummary()">
+          <option value="">Default (from settings)</option>
+          <optgroup label="Anthropic">
+            <option value="claude-opus-4-7">Claude Opus 4.7 — Best quality</option>
+            <option value="claude-sonnet-4-6" selected>Claude Sonnet 4.6 — Balanced</option>
+            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 — Fastest</option>
+          </optgroup>
+          <optgroup label="OpenAI">
+            <option value="gpt-4o">GPT-4o</option>
+            <option value="gpt-4o-mini">GPT-4o Mini</option>
+          </optgroup>
+          <optgroup label="Google">
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash — Recommended</option>
+            <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite — Fastest</option>
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <!-- Pipeline stages -->
+      <div class="pc-section">
+        <label class="pc-label">Pipeline Stages</label>
+        <div class="pc-stages">
+          <button class="pc-stage-btn active" id="pcstage-discovery" onclick="pcToggleStage('discovery')">
+            <div class="pc-stage-dot"></div>
+            <div>
+              <div style="font-weight:600">Discovery</div>
+              <div style="font-size:0.68rem;color:var(--text-3);margin-top:1px">Fetch news sources</div>
+            </div>
+          </button>
+          <button class="pc-stage-btn active" id="pcstage-verification" onclick="pcToggleStage('verification')">
+            <div class="pc-stage-dot"></div>
+            <div>
+              <div style="font-weight:600">Verification</div>
+              <div style="font-size:0.68rem;color:var(--text-3);margin-top:1px">Fact-check stories</div>
+            </div>
+          </button>
+          <button class="pc-stage-btn active" id="pcstage-writing" onclick="pcToggleStage('writing')">
+            <div class="pc-stage-dot"></div>
+            <div>
+              <div style="font-weight:600">Writing</div>
+              <div style="font-size:0.68rem;color:var(--text-3);margin-top:1px">Generate articles</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="pc-summary" id="pc-summary"></div>
+
+      <!-- Live log (shown while running) -->
+      <div class="pc-log" id="pc-log"></div>
+
+    </div>
+
+    <div class="pc-footer">
+      <button class="pc-btn-cancel" onclick="closePCModal()">Cancel</button>
+      <button class="pc-btn-run" id="pc-run-btn" onclick="confirmRunPipeline()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span id="pc-run-text">Run Pipeline</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast">
+  <div class="toast-icon" id="toast-icon"></div>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+  const API_KEY = "{{ api_key }}";
+  const H = { 'Content-Type': 'application/json', 'X-API-Key': API_KEY };
+  let currentArticle = null;
+  let rejectTargetId = null;
+  let pollTimer = null;
+  let allArticles = [];
+  let activeCategory = 'all';
+
+  // ── TOAST ─────────────────────────────────────────────────
+  let toastTimer;
+  function toast(msg, type = 'ok', ms = 3200) {
+    const el   = document.getElementById('toast');
+    const icon = document.getElementById('toast-icon');
+    const txt  = document.getElementById('toast-msg');
+    el.className = `toast t-${type}`;
+    icon.textContent = type === 'ok' ? '✓' : type === 'err' ? '!' : 'i';
+    txt.textContent  = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+  }
+
+  // ── HELPERS ───────────────────────────────────────────────
+  function scoreClass(s) { return s >= 80 ? 'b-hi' : s >= 50 ? 'b-mid' : 'b-lo'; }
+  function credClass(s)   { return s >= 80 ? 'cred-hi' : s >= 50 ? 'cred-mid' : 'cred-lo'; }
+
+  function fmtDate(iso) {
+    if (!iso) return null;
+    return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function seoGradeClass(score) {
+    if (score >= 80) return 'b-hi';
+    if (score >= 65) return 'b-mid';  // reuse amber
+    return 'b-lo';
+  }
+
+  function metaHtml(a) {
+    const date = fmtDate(a.published_at);
+    const parts = [
+      `<span class="badge b-cat">${escHtml(a.category)}</span>`,
+      `<span class="badge ${scoreClass(a.credibility_score)}">Cred ${a.credibility_score}</span>`,
+      `<span class="badge ${seoGradeClass(a.seo_score || 0)}" title="SEO Score">SEO ${a.seo_score || 0}</span>`,
+      `<span class="meta-sep">·</span><span class="meta-txt">${a.word_count} words</span>`,
+    ];
+    if (date) parts.push(`<span class="meta-sep">·</span><span class="meta-txt">${date}</span>`);
+    if (a.focus_keyword) parts.push(`<span class="meta-sep">·</span><span class="meta-txt">${escHtml(a.focus_keyword)}</span>`);
+    if (a.source_url) parts.push(`<span class="meta-sep">·</span><a class="meta-link" href="${a.source_url}" target="_blank" rel="noopener">Source ↗</a>`);
+    return parts.join(' ');
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── STATS ─────────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const r = await fetch('/stats/', { headers: H });
+      const d = await r.json();
+      document.getElementById('stat-pending').textContent  = d.pending_review;
+      document.getElementById('stat-total').textContent    = d.total_stories;
+      document.getElementById('stat-verified').textContent = d.verified;
+      document.getElementById('stat-rejected').textContent = d.rejected_checks;
+      document.getElementById('nav-refresh').textContent    = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    } catch {}
+  }
+
+  // ── SKELETON ──────────────────────────────────────────────
+  function showSkeleton() {
+    const list = document.getElementById('articles-list');
+    list.innerHTML = [1,2,3].map(() => `
+      <div class="skeleton-card">
+        <div class="sk sk-num"></div>
+        <div class="sk-body">
+          <div class="sk sk-line w-70"></div>
+          <div class="sk sk-line w-40"></div>
+          <div class="sk sk-line w-55"></div>
+        </div>
+        <div class="sk-actions">
+          <div class="sk sk-btn"></div>
+          <div class="sk sk-btn"></div>
+        </div>
+      </div>`).join('');
+  }
+
+  // ── ARTICLES ──────────────────────────────────────────────
+  async function loadArticles() {
+    try {
+      const r = await fetch('/articles/', { headers: H });
+      allArticles = await r.json();
+      buildFilterBar();
+      renderArticles();
+    } catch {}
+  }
+
+  function buildFilterBar() {
+    const cats = ['all', ...new Set(allArticles.map(a => a.category).filter(Boolean))];
+    const bar  = document.getElementById('filter-bar');
+    if (cats.length <= 2) { bar.innerHTML = ''; return; }
+    bar.innerHTML = cats.map(c => `
+      <button class="filter-chip${c === activeCategory ? ' active' : ''}"
+              onclick="setCategory('${escHtml(c)}')">${c === 'all' ? 'All' : escHtml(c)}</button>
+    `).join('');
+  }
+
+  function setCategory(cat) {
+    activeCategory = cat;
+    buildFilterBar();
+    renderArticles();
+  }
+
+  function filterArticles() { renderArticles(); }
+
+  function renderArticles() {
+    const list  = document.getElementById('articles-list');
+    const cnt   = document.getElementById('list-count');
+    const query = document.getElementById('search-input').value.trim().toLowerCase();
+
+    const visible = allArticles.filter(a => {
+      const catOk = activeCategory === 'all' || a.category === activeCategory;
+      const q     = !query || a.headline.toLowerCase().includes(query);
+      return catOk && q;
+    });
+
+    cnt.textContent = visible.length + ' article' + (visible.length !== 1 ? 's' : '');
+
+    if (!visible.length) {
+      list.innerHTML = `
+        <div class="empty">
+          <div class="empty-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+          </div>
+          <div class="empty-h">${allArticles.length ? 'No results match your filter' : 'No articles pending review'}</div>
+          <div class="empty-p">${allArticles.length ? 'Try a different category or clear your search.' : 'Click <strong>Run Pipeline</strong> to generate new drafts, or enable Auto Mode.'}</div>
+        </div>`;
+      return;
     }
 
-    async function viewArticle(id) {
-      const res = await fetch('/articles/' + id, { headers: HEADERS });
-      const a = await res.json();
-      currentDraftId = id;
-      document.getElementById('detail-headline').textContent = a.headline;
-      document.getElementById('detail-meta').innerHTML =
-        '<span class="badge badge-category">' + a.category + '</span>' +
-        '<span class="badge badge-score">Score ' + a.credibility_score + '</span>' +
-        ' · ' + a.word_count + ' words · <a href="' + a.source_url + '" target="_blank">Source</a>';
-      document.getElementById('detail-body').innerHTML = a.article_html;
-      document.getElementById('detail-approve-btn').onclick = () => approve(id);
-      document.getElementById('detail-reject-btn').onclick = () => reject(id);
-      document.getElementById('detail-panel').style.display = 'block';
-    }
+    list.innerHTML = visible.map((a, i) => `
+      <div class="article-card ${credClass(a.credibility_score)}">
+        <div class="card-num">${i + 1}</div>
+        <div class="card-body">
+          <div class="card-headline">${escHtml(a.headline)}</div>
+          <div class="card-row">${metaHtml(a)}</div>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-ghost" onclick="viewArticle(${a.id})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            View
+          </button>
+          <button class="btn btn-primary" id="copy-${a.id}" onclick="quickCopy(${a.id}, this)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+          <button class="btn btn-danger" onclick="openRejectModal(${a.id})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Reject
+          </button>
+        </div>
+      </div>`).join('');
+  }
 
-    function closeDetail() {
-      document.getElementById('detail-panel').style.display = 'none';
-      currentDraftId = null;
-    }
+  // ── PANEL TABS ────────────────────────────────────────────
+  function switchPanelTab(name) {
+    document.getElementById('ptab-article').classList.toggle('active', name === 'article');
+    document.getElementById('ptab-seo').classList.toggle('active', name === 'seo');
+    document.getElementById('panel-tab-article').style.display = name === 'article' ? '' : 'none';
+    document.getElementById('panel-tab-seo').style.display     = name === 'seo'     ? '' : 'none';
+  }
 
-    async function approve(id) {
-      await fetch('/articles/' + id + '/approve', { method: 'POST', headers: HEADERS, body: JSON.stringify({}) });
-      closeDetail();
-      await Promise.all([loadStats(), loadArticles()]);
-    }
+  // ── SEO PANEL ─────────────────────────────────────────────
+  function seoGaugeColor(score) {
+    if (score >= 80) return 'var(--green)';
+    if (score >= 65) return 'var(--blue)';
+    if (score >= 50) return 'var(--amber)';
+    return 'var(--red)';
+  }
 
-    async function reject(id) {
-      const reason = prompt('Rejection reason (optional):') || '';
-      await fetch('/articles/' + id + '/reject', { method: 'POST', headers: HEADERS, body: JSON.stringify({editor_notes: reason}) });
-      closeDetail();
-      await Promise.all([loadStats(), loadArticles()]);
-    }
+  function renderSEOPanel(a) {
+    const bd = a.seo_breakdown || {};
+    const score = a.seo_score || 0;
+    const grade = bd.grade || (score >= 80 ? 'A' : score >= 65 ? 'B' : score >= 50 ? 'C' : score >= 35 ? 'D' : 'F');
+    const checks = bd.checks || [];
 
-    // Init
-    Promise.all([loadStats(), loadArticles()]);
-    setInterval(() => Promise.all([loadStats(), loadArticles()]), 30000);
-  </script>
+    // SVG arc gauge
+    const r = 40, cx = 48, cy = 48;
+    const circ = 2 * Math.PI * r;
+    const pct = score / 100;
+    const offset = circ * (1 - pct);
+    const color = seoGaugeColor(score);
+
+    const gradeHints = {
+      A: 'Excellent — this article is well-optimised for search.',
+      B: 'Good — a few small fixes will push it to the top.',
+      C: 'Average — notable gaps in title, keyword, or length.',
+      D: 'Below average — several SEO issues need attention.',
+      F: 'Poor — major SEO issues; review all checks below.',
+    };
+
+    const checksHtml = checks.map(c => `
+      <div class="seo-check">
+        <div class="seo-check-dot ${c.status}"></div>
+        <div class="seo-check-body">
+          <div class="seo-check-row">
+            <span class="seo-check-name">${escHtml(c.name)}</span>
+            <span class="seo-check-pts">${c.score}/${c.max_score} pts</span>
+          </div>
+          <div class="seo-check-tip">${escHtml(c.tip)}</div>
+        </div>
+      </div>`).join('');
+
+    document.getElementById('seo-panel-content').innerHTML = `
+      <div class="seo-top">
+        <div class="seo-gauge-wrap">
+          <svg class="seo-gauge-svg" width="96" height="96" viewBox="0 0 96 96">
+            <circle class="seo-gauge-bg"  cx="${cx}" cy="${cy}" r="${r}" />
+            <circle class="seo-gauge-arc" cx="${cx}" cy="${cy}" r="${r}"
+              stroke="${color}"
+              stroke-dasharray="${circ}"
+              stroke-dashoffset="${offset}" />
+          </svg>
+          <div class="seo-gauge-label">
+            <span class="seo-gauge-num" style="color:${color}">${score}</span>
+            <span class="seo-gauge-sub">/ 100</span>
+          </div>
+        </div>
+        <div class="seo-summary">
+          <div class="seo-grade g-${grade}">Grade ${grade}</div>
+          <div class="seo-hint" style="margin-top:0.4rem">${gradeHints[grade] || ''}</div>
+          ${a.focus_keyword ? `<div class="seo-hint" style="margin-top:0.5rem;color:var(--text-3)">Focus keyword: <strong style="color:var(--text-2)">${escHtml(a.focus_keyword)}</strong></div>` : ''}
+        </div>
+      </div>
+      ${checks.length ? `<div class="seo-checks">${checksHtml}</div>` : '<div style="color:var(--text-3);font-size:0.8rem;">No breakdown available — run the pipeline to generate scores.</div>'}
+    `;
+
+    // Update the tab badge
+    const badge = document.getElementById('ptab-seo-badge');
+    badge.style.display = 'inline';
+    badge.innerHTML = `<span class="badge ${seoGradeClass(score)}" style="font-size:0.62rem;padding:1px 6px;">${score}</span>`;
+  }
+
+  // ── VIEW PANEL ────────────────────────────────────────────
+  async function viewArticle(id) {
+    try {
+      const r = await fetch('/articles/' + id, { headers: H });
+      const a = await r.json();
+      currentArticle = a;
+      document.getElementById('panel-headline').textContent = a.headline;
+      document.getElementById('panel-meta').innerHTML = metaHtml(a);
+      document.getElementById('panel-body').innerHTML = a.article_html;
+      document.getElementById('panel-copy-text').textContent = 'Copy Article';
+      document.getElementById('panel-copy-btn').className = 'btn btn-primary';
+      document.getElementById('panel-reject-btn').onclick = () => openRejectModal(id);
+      switchPanelTab('article');
+      renderSEOPanel(a);
+      document.getElementById('panel').classList.add('open');
+      document.getElementById('overlay').classList.add('open');
+    } catch { toast('Failed to load article', 'err'); }
+  }
+
+  function closePanel() {
+    document.getElementById('panel').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+    currentArticle = null;
+  }
+
+  // ── COPY ─────────────────────────────────────────────────
+  function articleText(a) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = a.article_html;
+    return a.headline + '\n\n' + (tmp.textContent || tmp.innerText || '');
+  }
+
+  function copyArticle() {
+    if (!currentArticle) return;
+    navigator.clipboard.writeText(articleText(currentArticle)).then(() => {
+      const btn  = document.getElementById('panel-copy-btn');
+      const span = document.getElementById('panel-copy-text');
+      btn.className  = 'btn btn-primary copied';
+      span.textContent = 'Copied!';
+      toast('Article copied to clipboard', 'ok');
+      setTimeout(() => { btn.className = 'btn btn-primary'; span.textContent = 'Copy Article'; }, 2000);
+    }).catch(() => toast('Copy failed — check clipboard permissions', 'err'));
+  }
+
+  async function quickCopy(id, btn) {
+    try {
+      const r = await fetch('/articles/' + id, { headers: H });
+      const a = await r.json();
+      await navigator.clipboard.writeText(articleText(a));
+      const orig = btn.innerHTML;
+      btn.classList.add('copied');
+      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied`;
+      toast('Copied to clipboard', 'ok');
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2000);
+    } catch { toast('Copy failed', 'err'); }
+  }
+
+  // ── REJECT MODAL ──────────────────────────────────────────
+  function openRejectModal(id) {
+    rejectTargetId = id;
+    document.getElementById('reject-reason').value = '';
+    document.getElementById('reject-modal').classList.add('open');
+  }
+
+  function closeRejectModal() {
+    document.getElementById('reject-modal').classList.remove('open');
+    rejectTargetId = null;
+  }
+
+  async function confirmReject() {
+    if (!rejectTargetId) return;
+    const id = rejectTargetId;
+    const reason = document.getElementById('reject-reason').value.trim();
+    closeRejectModal();
+    try {
+      await fetch('/articles/' + id + '/reject', {
+        method: 'POST', headers: H,
+        body: JSON.stringify({ editor_notes: reason })
+      });
+      closePanel();
+      toast('Article rejected', 'info');
+      await refresh();
+    } catch { toast('Failed to reject article', 'err'); }
+  }
+
+  // close modal on backdrop click
+  document.getElementById('reject-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeRejectModal();
+  });
+
+  // ── PIPELINE CONFIG MODAL ─────────────────────────────────
+  const pcStages = { discovery: true, verification: true, writing: true };
+
+  function runPipeline() {
+    if (document.getElementById('run-btn').disabled) return;
+    pcUpdateSummary();
+    document.getElementById('pc-log').classList.remove('visible');
+    document.getElementById('pc-log').innerHTML = '';
+    document.getElementById('pc-run-btn').disabled = false;
+    document.getElementById('pc-run-text').textContent = 'Run Pipeline';
+    document.getElementById('pc-modal').classList.add('open');
+  }
+
+  function closePCModal() {
+    document.getElementById('pc-modal').classList.remove('open');
+  }
+
+  // Backdrop click — registered directly (DOMContentLoaded already fired for inline scripts)
+  document.getElementById('pc-modal').addEventListener('click', function(e) {
+    if (e.target === this) closePCModal();
+  });
+
+  function pcSync(key, val) {
+    if (key === 'count') {
+      document.getElementById('pc-count-val').textContent = val;
+    } else if (key === 'words') {
+      document.getElementById('pc-words-val').textContent = val + ' words';
+    } else if (key === 'cred') {
+      document.getElementById('pc-cred-val').textContent = val + ' / 100';
+    }
+    pcUpdateSummary();
+  }
+
+  function pcToggleStage(name) {
+    pcStages[name] = !pcStages[name];
+    const btn = document.getElementById('pcstage-' + name);
+    btn.classList.toggle('active', pcStages[name]);
+    pcUpdateSummary();
+  }
+
+  function pcUpdateSummary() {
+    const count    = document.getElementById('pc-count').value;
+    const cat      = document.getElementById('pc-category').value;
+    const words    = document.getElementById('pc-words').value;
+    const cred     = document.getElementById('pc-cred').value;
+    const modelEl  = document.getElementById('pc-model');
+    const model    = modelEl.options[modelEl.selectedIndex].text;
+    const activeStages = Object.entries(pcStages).filter(([,v]) => v).map(([k]) => k);
+    const stages   = activeStages.join(' → ');
+    const noStages = activeStages.length === 0;
+
+    const catLabel = cat === 'all' ? 'all categories' : cat;
+    const runBtn   = document.getElementById('pc-run-btn');
+
+    if (noStages) {
+      document.getElementById('pc-summary').innerHTML =
+        '<span style="color:var(--red)">Select at least one pipeline stage to run.</span>';
+      runBtn.disabled = true;
+      runBtn.style.opacity = '0.4';
+    } else {
+      document.getElementById('pc-summary').innerHTML =
+        `Will run <strong>${stages}</strong> and write up to <strong>${count} ${catLabel} articles</strong> ` +
+        `at ~<strong>${words} words</strong> each using <strong>${model}</strong>. ` +
+        `Min credibility: <strong>${cred}</strong>.`;
+      runBtn.disabled = false;
+      runBtn.style.opacity = '';
+    }
+  }
+
+  function pcGetConfig() {
+    return {
+      article_count:    parseInt(document.getElementById('pc-count').value),
+      category:         document.getElementById('pc-category').value,
+      word_count:       parseInt(document.getElementById('pc-words').value),
+      min_credibility:  parseInt(document.getElementById('pc-cred').value),
+      run_discovery:    pcStages.discovery,
+      run_verification: pcStages.verification,
+      run_writing:      pcStages.writing,
+      ai_model:         document.getElementById('pc-model').value || null,
+    };
+  }
+
+  function pcAppendLog(entry) {
+    const log = document.getElementById('pc-log');
+    log.classList.add('visible');
+    const stageColors = { error: 'err', writing: 'ok', done: 'ok', discovery: 'info', verification: 'info', info: 'info' };
+    const cls = stageColors[entry.stage] || 'info';
+    const ts  = new Date(entry.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    log.innerHTML += `<div class="pc-log-line ${cls}">[${ts}] [${entry.stage}] ${escHtml(entry.msg)}</div>`;
+    log.scrollTop = log.scrollHeight;
+  }
+
+  async function confirmRunPipeline() {
+    const config = pcGetConfig();
+    _pcLogSeen = 0;  // always reset before a new run
+    document.getElementById('pc-run-btn').disabled = true;
+    document.getElementById('pc-run-btn').style.opacity = '';
+    document.getElementById('pc-run-text').textContent = 'Starting…';
+    document.getElementById('pc-log').innerHTML = '';
+    document.getElementById('pc-log').classList.remove('visible');
+
+    try {
+      const r = await fetch('/pipeline/run', {
+        method: 'POST', headers: H, body: JSON.stringify(config)
+      });
+      const d = await r.json();
+      if (d.status === 'started') {
+        toast('Pipeline started', 'info');
+        document.getElementById('pc-run-text').textContent = 'Running…';
+        if (!pollTimer) pollTimer = setInterval(syncPipelineStatus, 3000);
+        syncPipelineStatus();
+        _pcLogPoll();
+      } else if (d.status === 'already_running') {
+        toast('Pipeline is already running — wait for it to finish', 'info');
+        document.getElementById('pc-run-btn').disabled = false;
+        document.getElementById('pc-run-text').textContent = 'Run Pipeline';
+        pcAppendLog({ stage: 'info', msg: 'Another run is already in progress. Please wait.', ts: new Date().toISOString() });
+      } else {
+        toast('Unexpected response from server', 'err');
+        document.getElementById('pc-run-btn').disabled = false;
+        document.getElementById('pc-run-text').textContent = 'Run Pipeline';
+      }
+    } catch (err) {
+      toast('Failed to start pipeline — check your API key and server', 'err');
+      pcAppendLog({ stage: 'error', msg: String(err), ts: new Date().toISOString() });
+      document.getElementById('pc-run-btn').disabled = false;
+      document.getElementById('pc-run-text').textContent = 'Run Pipeline';
+    }
+  }
+
+  let _pcLogSeen = 0;
+  async function _pcLogPoll() {
+    try {
+      const r = await fetch('/pipeline/status', { headers: H });
+      const d = await r.json();
+      const log = d.stage_log || [];
+      for (let i = _pcLogSeen; i < log.length; i++) {
+        pcAppendLog(log[i]);
+      }
+      _pcLogSeen = log.length;
+
+      if (d.running) {
+        setTimeout(_pcLogPoll, 2000);
+      } else {
+        _pcLogSeen = 0;
+        if (d.last_result === 'success') {
+          pcAppendLog({ stage: 'done', msg: 'All stages completed successfully. Refresh the article list to see new drafts.', ts: new Date().toISOString() });
+        } else if (d.last_result && d.last_result.startsWith('error:')) {
+          pcAppendLog({ stage: 'error', msg: d.last_result, ts: new Date().toISOString() });
+        }
+        document.getElementById('pc-run-btn').disabled = false;
+        document.getElementById('pc-run-btn').style.opacity = '';
+        document.getElementById('pc-run-text').textContent = 'Run Again';
+      }
+    } catch {
+      setTimeout(_pcLogPoll, 4000);
+    }
+  }
+
+  // ── PIPELINE STATUS ───────────────────────────────────────
+  async function syncPipelineStatus() {
+    try {
+      const r = await fetch('/pipeline/status', { headers: H });
+      const d = await r.json();
+      const dot   = document.getElementById('pipe-dot');
+      const label = document.getElementById('pipe-label');
+      const btn   = document.getElementById('run-btn');
+      const icon  = document.getElementById('run-icon-svg');
+      const text  = document.getElementById('run-text');
+
+      if (d.running) {
+        dot.className   = 'pipe-dot running';
+        label.innerHTML = '<strong>Running…</strong>';
+        btn.disabled    = true;
+        btn.classList.add('running');
+        icon.style.animation = 'spin 0.9s linear infinite';
+        text.textContent = 'Running…';
+        if (!pollTimer) pollTimer = setInterval(syncPipelineStatus, 3000);
+      } else {
+        const res = d.last_result;
+        dot.className = res === 'success' ? 'pipe-dot' : res ? 'pipe-dot error' : 'pipe-dot';
+        label.innerHTML = res === 'success' ? '<strong>Last run completed</strong>'
+                        : res              ? '<strong>Last run failed</strong>'
+                        : '<strong>Idle</strong>';
+        btn.disabled = false;
+        btn.classList.remove('running');
+        icon.style.animation = '';
+        text.textContent = 'Run Pipeline';
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; await refresh(); }
+      }
+
+      const tog = document.getElementById('auto-toggle');
+      if (tog.checked !== d.auto_mode) tog.checked = d.auto_mode;
+      const as = document.getElementById('auto-state');
+      as.textContent = d.auto_mode ? 'On' : 'Off';
+      as.className   = d.auto_mode ? 'on' : '';
+    } catch {}
+  }
+
+  async function setAutoMode(enabled) {
+    try {
+      await fetch('/pipeline/auto?enabled=' + enabled, { method: 'POST', headers: H, body: '{}' });
+      const as = document.getElementById('auto-state');
+      as.textContent = enabled ? 'On' : 'Off';
+      as.className   = enabled ? 'on' : '';
+      toast('Auto mode ' + (enabled ? 'enabled — runs every 30 min' : 'disabled'), 'info');
+    } catch { toast('Failed to toggle auto mode', 'err'); }
+  }
+
+  // ── REFRESH ───────────────────────────────────────────────
+  async function refresh() {
+    await Promise.all([loadStats(), loadArticles()]);
+  }
+
+  // ── SETTINGS MODAL ───────────────────────────────────────
+  const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
+
+  function openSettings() {
+    document.getElementById('settings-modal').classList.add('open');
+    if (!IS_ADMIN) document.getElementById('team-tab-btn').style.display = 'none';
+    else loadUsers();
+  }
+  function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
+  document.getElementById('settings-modal').addEventListener('click', e => { if (e.target === document.getElementById('settings-modal')) closeSettings(); });
+
+  function smTab(name) {
+    document.querySelectorAll('.sm-tab').forEach((b, i) => b.classList.toggle('active', ['profile','team'][i] === name));
+    document.getElementById('sm-profile').style.display = name === 'profile' ? '' : 'none';
+    document.getElementById('sm-team').style.display    = name === 'team'    ? '' : 'none';
+    if (name === 'team') loadUsers();
+  }
+
+  function smMsg(id, msg, type) {
+    const el = document.getElementById(id);
+    el.textContent = msg; el.className = 'sm-msg ' + type; el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+  }
+
+  async function changeUsername() {
+    const val = document.getElementById('new-username').value.trim();
+    if (!val) return smMsg('username-msg', 'Enter a new username', 'err');
+    try {
+      const r = await fetch('/users/me/username', { method:'POST', headers:H, body: JSON.stringify({new_username: val}) });
+      const d = await r.json();
+      if (r.ok) {
+        smMsg('username-msg', 'Username updated to "' + d.username + '"', 'ok');
+        document.querySelector('.nav-uname').textContent = d.username;
+        document.querySelector('.nav-avatar').textContent = d.username[0].toUpperCase();
+        document.getElementById('new-username').value = '';
+      } else { smMsg('username-msg', d.detail || 'Failed to update', 'err'); }
+    } catch { smMsg('username-msg', 'Network error', 'err'); }
+  }
+
+  async function changePassword() {
+    const cur  = document.getElementById('cur-password').value;
+    const nw   = document.getElementById('new-password').value;
+    const conf = document.getElementById('confirm-password').value;
+    if (!cur || !nw) return smMsg('password-msg', 'Fill in all password fields', 'err');
+    if (nw !== conf) return smMsg('password-msg', 'New passwords do not match', 'err');
+    if (nw.length < 8) return smMsg('password-msg', 'Password must be at least 8 characters', 'err');
+    try {
+      const r = await fetch('/users/me/password', { method:'POST', headers:H, body: JSON.stringify({current_password: cur, new_password: nw}) });
+      const d = await r.json();
+      if (r.ok) {
+        smMsg('password-msg', 'Password changed successfully', 'ok');
+        document.getElementById('cur-password').value = '';
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+      } else { smMsg('password-msg', d.detail || 'Failed to update', 'err'); }
+    } catch { smMsg('password-msg', 'Network error', 'err'); }
+  }
+
+  async function sendInvite() {
+    const email = document.getElementById('invite-email').value.trim();
+    if (!email) return smMsg('invite-msg', 'Enter an email address', 'err');
+    document.getElementById('dev-otp-box').style.display = 'none';
+    try {
+      const r = await fetch('/users/invite', { method:'POST', headers:H, body: JSON.stringify({email}) });
+      const d = await r.json();
+      if (r.ok) {
+        smMsg('invite-msg', 'Invite sent to ' + email, 'ok');
+        document.getElementById('invite-email').value = '';
+        if (d.dev_otp) {
+          document.getElementById('dev-otp-val').textContent = d.dev_otp;
+          document.getElementById('dev-otp-box').style.display = 'block';
+        }
+        loadUsers();
+      } else { smMsg('invite-msg', d.detail || 'Failed to send invite', 'err'); }
+    } catch { smMsg('invite-msg', 'Network error', 'err'); }
+  }
+
+  async function loadUsers() {
+    const wrap = document.getElementById('users-list-wrap');
+    try {
+      const r = await fetch('/users/list', { headers: H });
+      const users = await r.json();
+      if (!users.length) { wrap.innerHTML = '<div style="color:var(--text-3);font-size:0.8rem;">No users yet.</div>'; return; }
+      wrap.innerHTML = `
+        <table class="users-table">
+          <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Joined</th><th></th></tr></thead>
+          <tbody>
+            ${users.map(u => `
+              <tr>
+                <td class="u-name">${escHtml(u.username)}</td>
+                <td>${escHtml(u.email)}</td>
+                <td><span class="u-badge ${u.is_admin ? 'admin' : 'user'}">${u.is_admin ? 'Admin' : 'User'}</span></td>
+                <td>${new Date(u.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
+                <td>${u.is_admin ? '' : `<button class="sm-btn danger" style="padding:3px 10px;font-size:0.72rem;" onclick="deleteUser(${u.id},'${escHtml(u.username)}')">Remove</button>`}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    } catch { wrap.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Failed to load users</div>'; }
+  }
+
+  async function deleteUser(id, name) {
+    if (!confirm('Remove user "' + name + '"? This cannot be undone.')) return;
+    try {
+      const r = await fetch('/users/' + id, { method: 'DELETE', headers: H });
+      if (r.ok) { toast('User "' + name + '" removed', 'ok'); loadUsers(); }
+      else { const d = await r.json(); toast(d.detail || 'Failed to remove user', 'err'); }
+    } catch { toast('Network error', 'err'); }
+  }
+
+  // ── INIT ──────────────────────────────────────────────────
+  pcUpdateSummary();
+  showSkeleton();
+  refresh();
+  syncPipelineStatus();
+  setInterval(refresh, 30000);
+  setInterval(syncPipelineStatus, 10000);
+</script>
 </body>
 </html>

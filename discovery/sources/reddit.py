@@ -67,3 +67,4 @@ class RedditSource(BaseSource):
 
         self.logger.info(f"Reddit: fetched {len(stories)} posts")
         return stories
+

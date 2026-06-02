@@ -19,19 +19,36 @@ _SCHEMA_TEMPLATE = {
     "inLanguage": "en-IN",
 }
 
-_SEO_USER_PROMPT = """Generate SEO metadata for this news article and return ONLY valid JSON.
+# Strict character-count instructions — "max" was too loose, AI generated short values.
+_SEO_USER_PROMPT = """Generate SEO metadata for this news article. Return ONLY valid JSON, no prose.
 
-Article headline: {headline}
-Article category: {category}
-Article excerpt (first 400 chars): {excerpt}
+Article headline : {headline}
+Article category : {category}
+Article excerpt  : {excerpt}
+
+CHARACTER COUNT RULES — count every character including spaces:
+  meta_title       : MUST be between 50 and 60 characters. Count carefully before outputting.
+  meta_description : MUST be between 140 and 155 characters. Count carefully before outputting.
 
 Return JSON with exactly these fields:
 {{
-  "meta_title": "<headline rephrased for search, 50-60 characters max>",
-  "meta_description": "<compelling 1-sentence summary, 140-155 characters max>",
-  "focus_keyword": "<single most important search keyword or phrase>",
-  "secondary_keywords": ["<keyword 1>", "<keyword 2>", "<keyword 3>", "<keyword 4>"],
-  "schema_type": "<NewsArticle | Article | BlogPosting>"
+  "meta_title": "<50-60 chars: headline rewritten for search with focus keyword near the start>",
+  "meta_description": "<140-155 chars: one compelling sentence summarising the article with the focus keyword>",
+  "focus_keyword": "<the single most searched phrase a reader would type to find this article>",
+  "secondary_keywords": ["<kw1>", "<kw2>", "<kw3>", "<kw4>"],
+  "schema_type": "NewsArticle"
+}}"""
+
+_KEYWORDS_PROMPT = """Extract SEO keywords for this news story. Return ONLY valid JSON.
+
+Headline : {headline}
+Category : {category}
+Summary  : {summary}
+
+Return JSON:
+{{
+  "focus_keyword": "<the single most important search phrase for this story>",
+  "secondary_keywords": ["<kw1>", "<kw2>", "<kw3>", "<kw4>"]
 }}"""
 
 
@@ -40,19 +57,81 @@ def _strip_html(html: str) -> str:
 
 
 def _extract_json(text: str) -> dict:
+    """
+    Robustly extract a JSON object from model output that may contain
+    prose preamble, markdown fences, or trailing explanation.
+    """
     text = text.strip()
-    text = re.sub(r"^```(?:json)?\s*", "", text)
-    text = re.sub(r"\s*```$", "", text)
-    return json.loads(text)
+    # Find the first { and the last } and extract just that slice
+    start = text.find("{")
+    end   = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        raise json.JSONDecodeError("No JSON object found", text, 0)
+    json_str = text[start : end + 1]
+    # Strip trailing commas before } or ] which some models produce
+    json_str = re.sub(r",\s*([}\]])", r"\1", json_str)
+    return json.loads(json_str)
+
+
+def _enforce_title_length(title: str, target_min: int = 50, target_max: int = 60) -> str:
+    """Trim or pad meta_title to hit the 50-60 char sweet spot."""
+    title = title.strip()
+    if len(title) > target_max:
+        # Truncate at the last space before the limit
+        trimmed = title[:target_max]
+        last_space = trimmed.rfind(" ")
+        title = trimmed[:last_space] if last_space > target_min else trimmed[:target_max]
+    return title
+
+
+def _enforce_description_length(desc: str, target_min: int = 140, target_max: int = 155) -> str:
+    """Trim meta_description to the 140-155 char window."""
+    desc = desc.strip()
+    if len(desc) > target_max:
+        trimmed = desc[:target_max]
+        last_space = trimmed.rfind(" ")
+        desc = trimmed[:last_space] if last_space > target_min else trimmed[:target_max]
+    return desc
 
 
 class SEOOptimizer:
     def __init__(self) -> None:
         self.settings = get_settings()
 
+    def get_keywords(self, headline: str, category: str, summary: str = "") -> tuple[str, list[str]]:
+        """
+        Lightweight pre-writing call: extract focus_keyword + secondary_keywords
+        from the headline alone (before the full article exists).
+        Returns (focus_keyword, secondary_keywords).
+        """
+        model = self.settings.resolved_seo_model
+        try:
+            raw = generate(
+                model=model,
+                anthropic_api_key=self.settings.anthropic_api_key,
+                openai_api_key=self.settings.openai_api_key,
+                gemini_api_key=self.settings.gemini_api_key,
+                system_text=SEO_SYSTEM_PROMPT,
+                user_text=_KEYWORDS_PROMPT.format(
+                    headline=headline,
+                    category=category,
+                    summary=(summary or "")[:300],
+                ),
+                max_tokens=256,
+                cache_system=True,
+            )
+            data = _extract_json(raw)
+            return (
+                data.get("focus_keyword", "").strip(),
+                [k.strip() for k in data.get("secondary_keywords", []) if k.strip()][:4],
+            )
+        except Exception as exc:
+            logger.warning(f"Keyword pre-extraction failed: {exc} — proceeding without keyword hint")
+            return ("", [])
+
     def optimize(self, headline: str, category: str, article_html: str) -> SEOMetadata:
         model   = self.settings.resolved_seo_model
-        excerpt = _strip_html(article_html)[:400].strip()
+        excerpt = _strip_html(article_html)[:500].strip()
         logger.info(f"Generating SEO metadata [{model}] for: '{headline[:60]}'")
 
         raw = generate(
@@ -61,7 +140,11 @@ class SEOOptimizer:
             openai_api_key=self.settings.openai_api_key,
             gemini_api_key=self.settings.gemini_api_key,
             system_text=SEO_SYSTEM_PROMPT,
-            user_text=_SEO_USER_PROMPT.format(headline=headline, category=category, excerpt=excerpt),
+            user_text=_SEO_USER_PROMPT.format(
+                headline=headline,
+                category=category,
+                excerpt=excerpt,
+            ),
             max_tokens=512,
             cache_system=True,
         )
@@ -72,24 +155,32 @@ class SEOOptimizer:
             logger.warning(f"SEO JSON parse failed: {exc} — using defaults")
             return self._default_metadata(headline, category)
 
+        meta_title = _enforce_title_length(data.get("meta_title", headline))
+        meta_desc  = _enforce_description_length(data.get("meta_description", ""))
+
+        logger.info(
+            f"  SEO meta_title ({len(meta_title)} chars): '{meta_title}' | "
+            f"meta_desc ({len(meta_desc)} chars)"
+        )
+
         schema = dict(_SCHEMA_TEMPLATE)
         schema["@type"]          = data.get("schema_type", "NewsArticle")
-        schema["headline"]       = data.get("meta_title", headline)[:110]
-        schema["description"]    = data.get("meta_description", "")[:200]
+        schema["headline"]       = meta_title
+        schema["description"]    = meta_desc
         schema["keywords"]       = [data.get("focus_keyword", "")] + data.get("secondary_keywords", [])
         schema["articleSection"] = category
 
         return SEOMetadata(
-            meta_title=data.get("meta_title", headline)[:100],
-            meta_description=data.get("meta_description", "")[:200],
-            focus_keyword=data.get("focus_keyword", ""),
-            secondary_keywords=data.get("secondary_keywords", [])[:5],
+            meta_title=meta_title,
+            meta_description=meta_desc,
+            focus_keyword=data.get("focus_keyword", "").strip(),
+            secondary_keywords=[k.strip() for k in data.get("secondary_keywords", []) if k.strip()][:5],
             schema_type=data.get("schema_type", "NewsArticle"),
             schema_markup=schema,
         )
 
     def _default_metadata(self, headline: str, category: str) -> SEOMetadata:
         schema = dict(_SCHEMA_TEMPLATE)
-        schema["headline"]       = headline[:110]
+        schema["headline"]       = headline[:60]
         schema["articleSection"] = category
-        return SEOMetadata(meta_title=headline[:100], schema_markup=schema)
+        return SEOMetadata(meta_title=headline[:60], schema_markup=schema)

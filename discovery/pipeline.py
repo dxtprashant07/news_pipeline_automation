@@ -4,6 +4,7 @@ from .sources.google_trends import GoogleTrendsSource
 from .sources.newsapi import NewsAPISource
 from .sources.reddit import RedditSource
 from .sources.rss import RSSFeedSource
+from .sources.twitter import TwitterSource
 from .sources.base import BaseSource, RawStory
 from .processors.normalizer import Normalizer
 from .processors.sanitizer import Sanitizer
@@ -35,6 +36,7 @@ class DiscoveryPipeline:
             NewsAPISource(),
             RedditSource(),
             RSSFeedSource(),
+            TwitterSource(),
         ]
 
         self.normalizer   = Normalizer()
@@ -45,9 +47,9 @@ class DiscoveryPipeline:
         self.prio_scorer  = PriorityScorer()
         self.repo         = StoryRepository(session)
 
-    def run(self) -> dict:
+    def run(self, category: str | None = None, max_stories: int | None = None) -> dict:
         logger.info("=" * 60)
-        logger.info("Discovery pipeline started")
+        logger.info(f"Discovery pipeline started — category={category or 'all'}, max={max_stories or self.settings.max_stories_per_run}")
 
         raw_stories = self._fetch_all_sources()
 
@@ -66,9 +68,12 @@ class DiscoveryPipeline:
 
         before_filter = len(stories)
         stories = [s for s in stories if s.credibility_score >= self.settings.min_credibility_score]
+        if category:
+            stories = [s for s in stories if s.category == category]
         filtered_out = before_filter - len(stories)
 
-        stories = stories[:self.settings.max_stories_per_run]
+        limit = max_stories or self.settings.max_stories_per_run
+        stories = stories[:limit]
 
         saved = self.repo.save_batch(stories)
         stats = self.repo.get_stats()

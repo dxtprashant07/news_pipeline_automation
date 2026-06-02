@@ -27,4 +27,6 @@ class ArticleDraft:
     source_url: str
     ai_model_used: str
     image_url: str = ""
+    seo_score: int = 0
+    seo_breakdown: dict = field(default_factory=dict)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

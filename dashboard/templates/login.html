@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>News Pipeline — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --indigo:   #6366f1; --purple: #8b5cf6;
+      --surface:  #0d1117; --card:   #161b27; --card-2: #1c2333;
+      --border:   rgba(255,255,255,0.07); --border-hi: rgba(99,102,241,0.55);
+      --text-1:   #f0f6fc; --text-2: #8b949e; --text-3: #3d444d;
+      --red: #f85149; --red-bg: rgba(248,81,73,0.1); --red-border: rgba(248,81,73,0.28);
+      --green: #3fb950;
+    }
+    html, body { height: 100%; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; background: var(--surface); color: var(--text-1); }
+
+    .page { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+
+    /* LEFT */
+    .left { position: relative; overflow: hidden; background: #09090f; display: flex; flex-direction: column; justify-content: space-between; padding: 3rem; }
+    .mesh { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 20% 20%, rgba(99,102,241,0.22) 0%, transparent 55%), radial-gradient(ellipse 60% 80% at 80% 70%, rgba(139,92,246,0.18) 0%, transparent 55%); animation: meshMove 12s ease-in-out infinite alternate; }
+    .grid-dots { position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px); background-size: 28px 28px; }
+    @keyframes meshMove { 0% { transform: scale(1); } 100% { transform: scale(1.08) translate(-2%, 2%); } }
+    .left-content { position: relative; z-index: 2; }
+    .brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 4rem; }
+    .brand-icon { width: 44px; height: 44px; background: linear-gradient(135deg, var(--indigo), var(--purple)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 0 0 1px rgba(255,255,255,0.12), 0 8px 20px rgba(99,102,241,0.45); }
+    .brand-name { font-size: 1.05rem; font-weight: 700; color: var(--text-1); letter-spacing: -0.02em; }
+    .brand-tag  { font-size: 0.68rem; color: var(--text-2); margin-top: 1px; }
+    .left-headline { font-size: 2.4rem; font-weight: 900; line-height: 1.18; letter-spacing: -0.04em; color: var(--text-1); margin-bottom: 1.1rem; }
+    .left-headline span { background: linear-gradient(90deg, var(--indigo), var(--purple), #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .left-desc { font-size: 0.9rem; color: var(--text-2); line-height: 1.7; max-width: 320px; margin-bottom: 2.5rem; }
+    .feature-list { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+    .feature-list li { display: flex; align-items: center; gap: 0.65rem; font-size: 0.82rem; color: var(--text-2); }
+    .feature-list li .ico { width: 22px; height: 22px; border-radius: 6px; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.25); display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+    .stats-strip { position: relative; z-index: 2; display: flex; gap: 2rem; }
+    .stat-n { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text-1); }
+    .stat-l { font-size: 0.68rem; color: var(--text-2); margin-top: 2px; font-weight: 500; }
+
+    /* RIGHT */
+    .right { display: flex; align-items: center; justify-content: center; padding: 2rem; background: var(--card); position: relative; }
+    .right::before { content: ''; position: absolute; left: 0; top: 15%; bottom: 15%; width: 1px; background: linear-gradient(to bottom, transparent, var(--border), rgba(99,102,241,0.18), var(--border), transparent); }
+    .form-wrap { width: 100%; max-width: 400px; }
+
+    /* TABS */
+    .tabs { display: flex; gap: 0; margin-bottom: 2rem; background: var(--card-2); border-radius: 10px; padding: 4px; }
+    .tab-btn {
+      flex: 1; padding: 0.5rem 0.75rem; border: none; border-radius: 7px; cursor: pointer;
+      font-size: 0.78rem; font-weight: 600; font-family: inherit;
+      background: transparent; color: var(--text-2); transition: all 0.15s;
+    }
+    .tab-btn.active { background: var(--card); color: var(--text-1); box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* FORM BADGE */
+    .form-badge { display: inline-flex; align-items: center; gap: 0.4rem; padding: 4px 12px; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.22); border-radius: 20px; font-size: 0.7rem; font-weight: 600; color: #a5b4fc; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 1.1rem; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 5px var(--green); }
+    .form-title { font-size: 1.65rem; font-weight: 800; letter-spacing: -0.04em; color: var(--text-1); margin-bottom: 0.4rem; }
+    .form-sub   { font-size: 0.83rem; color: var(--text-2); margin-bottom: 1.75rem; }
+
+    /* ERROR / SUCCESS */
+    .error-box { display: flex; align-items: flex-start; gap: 0.65rem; background: var(--red-bg); border: 1px solid var(--red-border); border-radius: 10px; padding: 0.8rem 1rem; margin-bottom: 1.4rem; animation: shake 0.4s cubic-bezier(0.36,0.07,0.19,0.97); }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+    .error-icon { width: 18px; height: 18px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; flex-shrink: 0; margin-top: 1px; }
+    .error-title { font-weight: 600; color: var(--red); font-size: 0.83rem; margin-bottom: 2px; }
+    .error-text  { font-size: 0.82rem; color: #ffa198; line-height: 1.5; }
+    .success-box { display: flex; align-items: flex-start; gap: 0.65rem; background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.28); border-radius: 10px; padding: 0.8rem 1rem; margin-bottom: 1.4rem; }
+    .success-icon { width: 18px; height: 18px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; flex-shrink: 0; margin-top: 1px; }
+    .success-text { font-size: 0.82rem; color: #86efac; line-height: 1.5; }
+
+    /* FIELDS */
+    .field { margin-bottom: 1.1rem; }
+    .field-label { font-size: 0.78rem; font-weight: 600; color: var(--text-2); margin-bottom: 0.5rem; display: block; }
+    .input-wrap { position: relative; }
+    .input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-3); pointer-events: none; display: flex; }
+    input[type="text"], input[type="password"], input[type="email"] {
+      width: 100%; padding: 0.72rem 1rem 0.72rem 2.65rem;
+      background: var(--card-2); border: 1px solid var(--border); border-radius: 10px;
+      color: var(--text-1); font-size: 0.9rem; font-family: inherit; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus { border-color: var(--border-hi); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+    input::placeholder { color: var(--text-3); }
+    .pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-3); padding: 3px; display: flex; transition: color 0.12s; }
+    .pw-toggle:hover { color: var(--text-2); }
+
+    /* CHECKBOX */
+    .remember-row { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 1.5rem; }
+    .remember-row input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--indigo); cursor: pointer; padding: 0; }
+    .remember-row label { font-size: 0.8rem; color: var(--text-2); cursor: pointer; }
+
+    /* BUTTON */
+    .btn-submit {
+      width: 100%; padding: 0.82rem; border-radius: 10px; border: none;
+      background: linear-gradient(135deg, var(--indigo), var(--purple));
+      color: white; font-size: 0.9rem; font-weight: 700; font-family: inherit;
+      cursor: pointer; transition: all 0.15s;
+      box-shadow: 0 4px 16px rgba(99,102,241,0.35);
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .btn-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(99,102,241,0.5); }
+    .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+    .spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* DIVIDER */
+    .divider { display: flex; align-items: center; gap: 0.75rem; margin: 1.5rem 0; }
+    .divider-line { flex: 1; height: 1px; background: var(--border); }
+    .divider-text { font-size: 0.7rem; color: var(--text-3); white-space: nowrap; }
+
+    /* SECURITY ROW */
+    .security-row { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-top: 1.5rem; }
+    .sec-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.68rem; color: var(--text-3); }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) { .page { grid-template-columns: 1fr; } .left { display: none; } .right::before { display: none; } .right { padding: 1.5rem; } }
+  </style>
+</head>
+<body>
+<div class="page">
+  <!-- LEFT PANEL -->
+  <div class="left">
+    <div class="mesh"></div><div class="grid-dots"></div>
+    <div class="left-content">
+      <div class="brand">
+        <div class="brand-icon">📰</div>
+        <div><div class="brand-name">News Pipeline</div><div class="brand-tag">Autonomous AI Newsroom</div></div>
+      </div>
+      <h2 class="left-headline">Your AI newsroom,<br><span>fully automated</span></h2>
+      <p class="left-desc">Discover, verify, write, and publish news articles at scale — powered by Claude AI.</p>
+      <ul class="feature-list">
+        <li><span class="ico">🔍</span> Real-time story discovery from 50+ sources</li>
+        <li><span class="ico">✅</span> AI-powered fact verification</li>
+        <li><span class="ico">✍️</span> GPT-quality articles in seconds</li>
+        <li><span class="ico">🚀</span> One-click publish to WordPress + social</li>
+        <li><span class="ico">📊</span> Analytics loop that improves over time</li>
+      </ul>
+    </div>
+    <div class="stats-strip">
+      <div><div class="stat-n">7</div><div class="stat-l">Pipeline Stages</div></div>
+      <div><div class="stat-n">24/7</div><div class="stat-l">Autonomous</div></div>
+      <div><div class="stat-n">Auto</div><div class="stat-l">Publish Mode</div></div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right">
+    <div class="form-wrap">
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab-btn {% if tab == 'login' %}active{% endif %}" onclick="switchTab('login')">Sign In</button>
+        <button class="tab-btn {% if tab == 'setup' %}active{% endif %}" onclick="switchTab('setup')">Set up Account</button>
+      </div>
+
+      <!-- ── LOGIN TAB ── -->
+      <div class="tab-panel {% if tab == 'login' %}active{% endif %}" id="tab-login">
+        <div class="form-badge"><span class="dot"></span>Secure Access</div>
+        <div class="form-title">Welcome back</div>
+        <div class="form-sub">Sign in to your editor dashboard</div>
+
+        {% if error and tab == 'login' %}
+        <div class="error-box">
+          <div class="error-icon">!</div>
+          <div><div class="error-title">Authentication failed</div><div class="error-text">{{ error }}</div></div>
+        </div>
+        {% endif %}
+
+        <form method="post" action="/login" id="login-form">
+          <div class="field">
+            <label class="field-label" for="username">Username</label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+              <input type="text" id="username" name="username" placeholder="Enter your username" autocomplete="username" required autofocus />
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="password">Password</label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+              <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required />
+              <button type="button" class="pw-toggle" onclick="togglePw('password','eye1a','eye1b')">
+                <svg id="eye1a" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="eye1b" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="remember-row">
+            <input type="checkbox" id="remember" name="remember" />
+            <label for="remember">Keep me signed in for 7 days</label>
+          </div>
+          <button type="submit" class="btn-submit" id="login-btn">
+            <div class="spinner" id="login-spin"></div>
+            <span id="login-text">Sign In</span>
+            <svg id="login-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </form>
+
+        <div class="divider"><div class="divider-line"></div><div class="divider-text">secured with session encryption</div><div class="divider-line"></div></div>
+        <div class="security-row">
+          <div class="sec-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>HTTPS encrypted</div>
+          <div class="sec-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Session auth</div>
+          <div class="sec-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Auto-expires</div>
+        </div>
+      </div>
+
+      <!-- ── SETUP TAB ── -->
+      <div class="tab-panel {% if tab == 'setup' %}active{% endif %}" id="tab-setup">
+        <div class="form-badge"><span class="dot"></span>New Account</div>
+        <div class="form-title">Set up account</div>
+        <div class="form-sub">Enter your invitation code to create your account</div>
+
+        <div id="setup-error" style="display:none" class="error-box">
+          <div class="error-icon">!</div>
+          <div><div class="error-title">Setup failed</div><div class="error-text" id="setup-error-msg"></div></div>
+        </div>
+        <div id="setup-success" style="display:none" class="success-box">
+          <div class="success-icon">✓</div>
+          <div class="success-text">Account created! You can now <a href="/login" style="color:#86efac;text-decoration:underline;">sign in</a>.</div>
+        </div>
+
+        <div id="setup-form">
+          <div class="field">
+            <label class="field-label">Email address</label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+              <input type="text" id="setup-email" placeholder="your@email.com" value="{{ prefill_email or '' }}" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Verification code (from email)</label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+              <input type="text" id="setup-otp" placeholder="6-digit code" maxlength="6" style="letter-spacing:0.2em;font-family:monospace;" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Choose a username</label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+              <input type="text" id="setup-username" placeholder="johndoe" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Set a password</label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+              <input type="password" id="setup-password" placeholder="Min 8 characters" />
+              <button type="button" class="pw-toggle" onclick="togglePw('setup-password','eye2a','eye2b')">
+                <svg id="eye2a" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="eye2b" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+          </div>
+          <button type="button" class="btn-submit" id="setup-btn" onclick="submitSetup()">
+            <div class="spinner" id="setup-spin"></div>
+            <span id="setup-text">Create Account</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // Tab switching
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', ['login','setup'][i] === name));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+
+  // Show correct tab on load
+  const initTab = '{{ tab or "login" }}';
+  if (initTab !== 'login') switchTab(initTab);
+
+  // Password toggle
+  function togglePw(inputId, showId, hideId) {
+    const inp = document.getElementById(inputId);
+    if (inp.type === 'password') { inp.type = 'text'; document.getElementById(showId).style.display='none'; document.getElementById(hideId).style.display='block'; }
+    else                         { inp.type = 'password'; document.getElementById(showId).style.display='block'; document.getElementById(hideId).style.display='none'; }
+  }
+
+  // Login spinner
+  document.getElementById('login-form').addEventListener('submit', function() {
+    document.getElementById('login-btn').disabled = true;
+    document.getElementById('login-spin').style.display = 'block';
+    document.getElementById('login-text').textContent = 'Signing in…';
+    document.getElementById('login-arrow').style.display = 'none';
+  });
+
+  // Account setup
+  async function submitSetup() {
+    const email    = document.getElementById('setup-email').value.trim();
+    const otp      = document.getElementById('setup-otp').value.trim();
+    const username = document.getElementById('setup-username').value.trim();
+    const password = document.getElementById('setup-password').value;
+
+    document.getElementById('setup-error').style.display = 'none';
+    document.getElementById('setup-btn').disabled = true;
+    document.getElementById('setup-spin').style.display = 'block';
+    document.getElementById('setup-text').textContent = 'Creating…';
+
+    try {
+      const r = await fetch('/users/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp, username, password }),
+      });
+      const d = await r.json();
+      if (r.ok) {
+        document.getElementById('setup-form').style.display = 'none';
+        document.getElementById('setup-success').style.display = 'flex';
+      } else {
+        showSetupError(d.detail || 'Something went wrong');
+      }
+    } catch { showSetupError('Network error — please try again'); }
+    finally {
+      document.getElementById('setup-btn').disabled = false;
+      document.getElementById('setup-spin').style.display = 'none';
+      document.getElementById('setup-text').textContent = 'Create Account';
+    }
+  }
+
+  function showSetupError(msg) {
+    document.getElementById('setup-error-msg').textContent = msg;
+    document.getElementById('setup-error').style.display = 'flex';
+  }
+</script>
+</body>
+</html>

@@ -1,15 +1,19 @@
-import json
-import requests
 from datetime import datetime, timezone
 
 from .base import BaseSource, RawStory
 from core.config.settings import get_settings
 from core.utils.rate_limiter import get_limiter
-from core.utils.retry import with_retry
+from core.utils.logger import get_logger
 
-# NOTE: Google Trends unofficial API — endpoint may change.
-# Current known-working endpoint as of 2026.
-TRENDS_URL = "https://trends.google.com/trends/api/dailytrends"
+logger = get_logger("sources.google_trends")
+
+# Country code → pytrends pn (property name) mapping
+_GEO_TO_PN = {
+    "IN": "india",
+    "US": "united_states",
+    "GB": "united_kingdom",
+    "GLOBAL": "united_states",
+}
 
 
 class GoogleTrendsSource(BaseSource):
@@ -22,58 +26,42 @@ class GoogleTrendsSource(BaseSource):
 
     def fetch(self) -> list[RawStory]:
         try:
-            return self._fetch_trends()
+            from pytrends.request import TrendReq
+        except ImportError:
+            self.logger.error("pytrends not installed. Run: pip install pytrends")
+            return []
+
+        try:
+            return self._fetch_with_pytrends(TrendReq)
         except Exception as exc:
             self.logger.error(f"GoogleTrends fetch failed: {exc}")
             return []
 
-    @with_retry(max_attempts=3, base_delay=2.0, circuit_name="google_trends")
-    def _fetch_trends(self) -> list[RawStory]:
+    def _fetch_with_pytrends(self, TrendReq) -> list[RawStory]:
         self.limiter.acquire()
 
-        geo = self.settings.geo_focus if self.settings.geo_focus != "GLOBAL" else "US"
+        geo = self.settings.geo_focus.upper()
+        pn  = _GEO_TO_PN.get(geo, "india")
 
-        resp = requests.get(
-            TRENDS_URL,
-            params={"hl": "en-US", "geo": geo, "ns": 15},
-            headers={"User-Agent": "Mozilla/5.0 NewsPipeline/1.0"},
-            timeout=15,
-        )
-        resp.raise_for_status()
+        pt = TrendReq(hl="en-US", tz=330, timeout=(10, 30), retries=2, backoff_factor=0.5)
 
-        # Google prepends ")]}'\n" to the JSON body — strip it
-        raw_json = resp.text[5:]
-        data = json.loads(raw_json)
+        # trending_searches returns a DataFrame; column 0 holds the trend strings
+        df = pt.trending_searches(pn=pn)
+        trends = df[0].dropna().tolist()[:25]
 
         stories: list[RawStory] = []
-        trending_searches = (
-            data.get("default", {})
-                .get("trendingSearchesDays", [{}])[0]
-                .get("trendingSearches", [])
-        )
-
-        for item in trending_searches:
-            title = item.get("title", {}).get("query", "").strip()
-            if not title:
+        for trend in trends:
+            trend = str(trend).strip()
+            if not trend:
                 continue
-
-            articles = item.get("articles", [])
-            url      = articles[0].get("url", "")     if articles else ""
-            summary  = articles[0].get("snippet", "") if articles else ""
-            image    = articles[0].get("image", {}).get("imageUrl", "") if articles else ""
-
-            if not url:
-                url = f"https://www.google.com/search?q={title.replace(' ', '+')}"
-
             stories.append(RawStory(
-                title=title,
-                url=url,
+                title=trend,
+                url=f"https://www.google.com/search?q={trend.replace(' ', '+')}+news",
                 source_name=self.name,
                 published_at=datetime.now(timezone.utc),
-                summary=summary,
-                image_url=image,
-                extra={"traffic": item.get("formattedTraffic", ""), "geo": geo},
+                summary=f"Trending search: {trend}",
+                extra={"geo": geo, "pn": pn},
             ))
 
-        self.logger.info(f"GoogleTrends: fetched {len(stories)} trending topics")
+        self.logger.info(f"GoogleTrends: fetched {len(stories)} trending topics for {geo}")
         return stories

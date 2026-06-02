@@ -24,6 +24,7 @@ SOURCE_BONUSES: dict[str, int] = {
     "newsapi":       5,
     "rss":           3,
     "reddit":       -10,
+    "twitter":       -5,   # unverified individual tweets; boosted if from known account
     "google_trends": 0,
 }
 

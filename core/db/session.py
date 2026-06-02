@@ -1,5 +1,5 @@
 from pathlib import Path
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker, Session
 from .models import Base
 from ..utils.logger import get_logger
@@ -31,9 +31,25 @@ def _make_engine(database_url: str):
     return engine
 
 
+def _migrate(engine) -> None:
+    """Add new columns to existing tables without dropping data."""
+    migrations = [
+        "ALTER TABLE article_drafts ADD COLUMN seo_score INTEGER DEFAULT 0",
+        "ALTER TABLE article_drafts ADD COLUMN seo_breakdown JSON DEFAULT '{}'",
+    ]
+    with engine.connect() as conn:
+        for sql in migrations:
+            try:
+                conn.execute(text(sql))
+                conn.commit()
+            except Exception:
+                pass  # column already exists -- safe to ignore
+
+
 def init_db(database_url: str):
     engine = _make_engine(database_url)
     Base.metadata.create_all(engine)
+    _migrate(engine)
     logger.info(f"Database initialised: {database_url}")
     return engine
 
@@ -41,4 +57,5 @@ def init_db(database_url: str):
 def get_session_factory(database_url: str) -> sessionmaker:
     engine = _make_engine(database_url)
     Base.metadata.create_all(engine)
+    _migrate(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)

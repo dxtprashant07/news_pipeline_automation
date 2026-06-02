@@ -9,6 +9,30 @@ class Base(DeclarativeBase):
     pass
 
 
+# ── Dashboard Users ────────────────────────────────────────────────────────
+
+class DashboardUser(Base):
+    __tablename__ = "dashboard_users"
+
+    id            = Column(Integer, primary_key=True, autoincrement=True)
+    username      = Column(String(100), unique=True, nullable=False, index=True)
+    email         = Column(String(200), unique=True, nullable=False, index=True)
+    password_hash = Column(String(300), nullable=False)
+    is_admin      = Column(Boolean, default=False)
+    created_at    = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+class PendingInvite(Base):
+    __tablename__ = "pending_invites"
+
+    id         = Column(Integer, primary_key=True, autoincrement=True)
+    email      = Column(String(200), nullable=False, index=True)
+    otp        = Column(String(10), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    used       = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
 # ── Stage 1+2: Discovery ───────────────────────────────────────────────────
 
 class DiscoveredStory(Base):
@@ -91,6 +115,10 @@ class ArticleDraft(Base):
     secondary_keywords  = Column(JSON, default=list)
     schema_type         = Column(String(50), default="NewsArticle")
     schema_markup       = Column(JSON, default=dict)
+
+    # SEO score
+    seo_score     = Column(Integer, default=0)
+    seo_breakdown = Column(JSON, default=dict)
 
     # Metadata
     category      = Column(String(100), default="general", index=True)

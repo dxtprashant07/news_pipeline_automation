@@ -16,7 +16,7 @@ from dashboard.schemas.article import (
 )
 from core.db.session import get_session_factory
 from core.db.repository import DraftRepository
-from core.db.models import ArticleDraft, FactCheckResult
+from core.db.models import ArticleDraft, FactCheckResult, DiscoveredStory
 from core.config.settings import get_settings
 from core.utils.logger import get_logger
 
@@ -41,6 +41,7 @@ def list_pending(limit: int = 50, session: Session = Depends(get_session)):
         for draft in drafts:
             fact_check = session.query(FactCheckResult).filter_by(story_id=draft.story_id).first()
             credibility = fact_check.credibility_score if fact_check else 0
+            story = session.get(DiscoveredStory, draft.story_id)
             results.append(ArticleSummary(
                 id=draft.id,
                 story_id=draft.story_id,
@@ -49,9 +50,11 @@ def list_pending(limit: int = 50, session: Session = Depends(get_session)):
                 word_count=draft.word_count,
                 focus_keyword=draft.focus_keyword,
                 credibility_score=credibility,
+                seo_score=draft.seo_score or 0,
                 source_url=draft.source_url,
                 status=draft.status,
                 created_at=draft.created_at,
+                published_at=story.published_at if story else None,
             ))
         return results
     except Exception:
@@ -69,6 +72,7 @@ def get_article(draft_id: int, session: Session = Depends(get_session)):
 
         fact_check = session.query(FactCheckResult).filter_by(story_id=draft.story_id).first()
         credibility = fact_check.credibility_score if fact_check else 0
+        story = session.get(DiscoveredStory, draft.story_id)
 
         return ArticleDetail(
             id=draft.id,
@@ -83,11 +87,14 @@ def get_article(draft_id: int, session: Session = Depends(get_session)):
             secondary_keywords=draft.secondary_keywords or [],
             schema_markup=draft.schema_markup or {},
             credibility_score=credibility,
+            seo_score=draft.seo_score or 0,
+            seo_breakdown=draft.seo_breakdown or {},
             source_url=draft.source_url,
             image_url=draft.image_url or "",
             editor_notes=draft.editor_notes or "",
             status=draft.status,
             created_at=draft.created_at,
+            published_at=story.published_at if story else None,
         )
     except HTTPException:
         raise

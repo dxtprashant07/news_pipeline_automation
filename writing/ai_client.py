@@ -12,6 +12,29 @@ from core.utils.logger import get_logger
 
 logger = get_logger("writing.ai_client")
 
+# Deprecated or renamed model aliases → current working names
+_MODEL_ALIASES: dict[str, str] = {
+    # Gemini — 1.x names are deprecated; map to current 2.x equivalents
+    "gemini-1.5-flash":           "gemini-2.0-flash",
+    "gemini-1.5-flash-latest":    "gemini-2.0-flash",
+    "gemini-1.5-flash-001":       "gemini-2.0-flash",
+    "gemini-1.5-flash-002":       "gemini-2.0-flash",
+    "gemini-1.5-pro":             "gemini-2.0-flash",
+    "gemini-1.5-pro-latest":      "gemini-2.0-flash",
+    "gemini-1.0-pro":             "gemini-2.0-flash",
+    "gemini-pro":                 "gemini-2.0-flash",
+    # OpenAI — legacy aliases
+    "gpt-4-turbo":                "gpt-4o",
+    "gpt-4-turbo-preview":        "gpt-4o",
+}
+
+
+def _resolve_model(model: str) -> str:
+    resolved = _MODEL_ALIASES.get(model.lower().strip(), model)
+    if resolved != model:
+        logger.warning(f"Model '{model}' is deprecated — using '{resolved}' instead.")
+    return resolved
+
 
 def _is_anthropic(model: str) -> bool:
     return model.lower().startswith("claude")
@@ -69,23 +92,43 @@ def _call_gemini(*, model: str, api_key: str, system_text: str, user_text: str,
     model_path = model if model.startswith("models/") else f"models/{model}"
     url = f"https://generativelanguage.googleapis.com/v1beta/{model_path}:generateContent"
 
+    # Gemini 2.x supports up to 8192 output tokens; ensure we never under-allocate.
+    output_tokens = max(max_tokens, 4096)
+
     resp = requests.post(
         url,
         headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
         json={
             "systemInstruction": {"parts": [{"text": system_text}]},
             "contents": [{"role": "user", "parts": [{"text": user_text}]}],
-            "generationConfig": {"maxOutputTokens": max_tokens},
+            "generationConfig": {
+                "maxOutputTokens": output_tokens,
+                "temperature": 0.9,
+            },
         },
-        timeout=60,
+        timeout=120,
     )
     resp.raise_for_status()
-    data  = resp.json()
-    parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-    text  = "".join(p.get("text", "") for p in parts).strip()
+    data      = resp.json()
+    candidate = data.get("candidates", [{}])[0]
+    finish    = candidate.get("finishReason", "")
+    parts     = candidate.get("content", {}).get("parts", [])
+    text      = "".join(p.get("text", "") for p in parts).strip()
+
     if not text:
-        raise ValueError(f"Gemini model '{model}' returned no text")
-    logger.debug(f"Gemini {model}: tokens={data.get('usageMetadata', {}).get('totalTokenCount', '?')}")
+        safety = candidate.get("safetyRatings", [])
+        raise ValueError(
+            f"Gemini '{model}' returned no text. "
+            f"finishReason={finish}, safetyRatings={safety}"
+        )
+
+    if finish == "MAX_TOKENS":
+        logger.warning(f"Gemini '{model}' hit MAX_TOKENS — response may be truncated")
+
+    logger.debug(
+        f"Gemini {model}: finish={finish}, "
+        f"tokens={data.get('usageMetadata', {}).get('totalTokenCount', '?')}"
+    )
     return text
 
 
@@ -101,6 +144,8 @@ def generate(
     cache_system: bool = True,
 ) -> str:
     """Route to the correct AI provider and return generated text."""
+    model = _resolve_model(model)
+
     if _is_anthropic(model):
         if not anthropic_api_key:
             raise ValueError(f"Model '{model}' requires ANTHROPIC_API_KEY in .env")

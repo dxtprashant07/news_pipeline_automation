@@ -20,20 +20,40 @@ from core.utils.logger import get_logger
 logger = get_logger("verification.fact_checker")
 
 TIER1_DOMAINS: frozenset[str] = frozenset({
-    "reuters.com", "apnews.com", "bbc.com", "bbc.co.uk",
+    # International wire services
+    "reuters.com", "apnews.com", "afp.com",
+    # International broadcasters
+    "bbc.com", "bbc.co.uk", "aljazeera.com",
+    # Indian Tier-1 newspapers / outlets
     "thehindu.com", "ndtv.com", "theprint.in",
     "timesofindia.indiatimes.com", "hindustantimes.com",
+    "indianexpress.com",
+    # Indian financial press
     "economictimes.indiatimes.com", "livemint.com",
     "businessstandard.com", "financialexpress.com",
-    "nature.com", "science.org",
+    "moneycontrol.com",
+    # International financial press
+    "bloomberg.com", "wsj.com", "ft.com",
+    # Science / government
+    "nature.com", "science.org", "who.int",
+    "pib.gov.in", "mygov.in",                    # Indian government press releases
 })
 
 TIER2_DOMAINS: frozenset[str] = frozenset({
-    "indianexpress.com", "scroll.in", "thewire.in",
-    "newslaundry.com", "firstpost.com", "news18.com",
-    "cnbc.com", "bloomberg.com", "techcrunch.com",
-    "wired.com", "theverge.com", "arstechnica.com",
-    "forbes.com", "wsj.com", "ft.com",
+    # Indian digital news
+    "scroll.in", "thewire.in", "newslaundry.com",
+    "firstpost.com", "news18.com", "zeenews.india.com",
+    "indiatoday.in", "deccanherald.com", "telegraphindia.com",
+    "tribuneindia.com", "dnaindia.com", "freepressjournal.in",
+    # Indian business / tech
+    "inc42.com", "yourstory.com", "entrackr.com", "techcircle.in",
+    "bgr.in", "gadgets360.com",
+    # Sports
+    "espncricinfo.com", "cricbuzz.com", "sportskeeda.com",
+    # International
+    "cnbc.com", "techcrunch.com", "wired.com",
+    "theverge.com", "arstechnica.com", "forbes.com",
+    "theguardian.com", "nytimes.com", "washingtonpost.com",
 })
 
 BING_SEARCH_URL = "https://api.bing.microsoft.com/v7.0/search"

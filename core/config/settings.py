@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator
 
@@ -25,6 +26,7 @@ class Settings(BaseSettings):
     reddit_client_id: str = ""
     reddit_client_secret: str = ""
     reddit_user_agent: str = "NewsPipeline/1.0"
+    twitter_bearer_token: str = ""
 
     # ── Discovery Scheduler ────────────────────────────────
     discovery_interval_minutes: int = 30
@@ -63,7 +65,16 @@ class Settings(BaseSettings):
     dashboard_port: int = 8000
     dashboard_secret_key: str = ""
     dashboard_api_key: str = ""       # Set in production to protect the dashboard
+    dashboard_username: str = "admin"
+    dashboard_password: str = ""      # Set in production — empty disables login (dev only)
     cors_origins: str = "http://localhost:8000,http://127.0.0.1:8000"
+
+    # ── Email / SMTP (for OTP) ─────────────────────────────
+    smtp_host:     str = "smtp.gmail.com"
+    smtp_port:     int = 587
+    smtp_user:     str = ""   # Gmail address
+    smtp_password: str = ""   # Gmail App Password (not your login password)
+    smtp_from:     str = ""   # Sender display address (defaults to smtp_user)
 
     # ── WordPress Publisher (Stage 6) ──────────────────────
     wordpress_url: str = ""          # e.g. https://yoursite.com
@@ -114,6 +125,7 @@ class Settings(BaseSettings):
                 self.newsapi_key,
                 self.reddit_client_id,
                 self.reddit_client_secret,
+                self.twitter_bearer_token,
                 self.anthropic_api_key,
                 self.openai_api_key,
                 self.gemini_api_key,
@@ -127,6 +139,25 @@ class Settings(BaseSettings):
         ]
 
 
-@lru_cache(maxsize=1)
+_settings_mtime: float = 0.0
+
+
 def get_settings() -> Settings:
-    return Settings()
+    """
+    Returns cached Settings, but re-reads .env if the file has been modified
+    since the last call — so you don't need to restart the server after editing .env.
+    """
+    global _settings_mtime
+    global _cached_settings
+
+    env_file = Path(".env")
+    try:
+        mtime = env_file.stat().st_mtime if env_file.exists() else 0.0
+    except OSError:
+        mtime = 0.0
+
+    if mtime != _settings_mtime or "_cached_settings" not in globals():
+        _cached_settings = Settings()
+        _settings_mtime  = mtime
+
+    return _cached_settings

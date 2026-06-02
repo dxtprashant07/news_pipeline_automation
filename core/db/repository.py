@@ -86,14 +86,24 @@ class StoryRepository:
         q = q.order_by(DiscoveredStory.priority_score.desc()).limit(limit)
         return list(self.session.scalars(q).all())
 
-    def fetch_fact_checked(self, limit: int = 50, min_credibility: int = 0) -> list[DiscoveredStory]:
+    def fetch_fact_checked(
+        self,
+        limit: int = 50,
+        min_credibility: int = 0,
+        category: str | None = None,
+        max_age_hours: int = 48,
+    ) -> list[DiscoveredStory]:
+        from datetime import timedelta
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=max_age_hours)
         q = (
             select(DiscoveredStory)
             .where(DiscoveredStory.status == "fact_checked")
             .where(DiscoveredStory.credibility_score >= min_credibility)
-            .order_by(DiscoveredStory.priority_score.desc())
-            .limit(limit)
+            .where(DiscoveredStory.discovered_at >= cutoff)
         )
+        if category:
+            q = q.where(DiscoveredStory.category == category)
+        q = q.order_by(DiscoveredStory.priority_score.desc()).limit(limit)
         return list(self.session.scalars(q).all())
 
     def update_status(self, story_id: int, status: str) -> None:
@@ -167,6 +177,8 @@ class DraftRepository:
         row.secondary_keywords = draft.seo.secondary_keywords
         row.schema_type        = draft.seo.schema_type
         row.schema_markup      = draft.seo.schema_markup
+        row.seo_score          = getattr(draft, "seo_score", 0)
+        row.seo_breakdown      = getattr(draft, "seo_breakdown", {})
         row.category           = draft.category
         row.source_url         = draft.source_url
         row.ai_model_used      = draft.ai_model_used
@@ -179,8 +191,12 @@ class DraftRepository:
         return list(
             self.session.scalars(
                 select(ArticleDraft)
+                .join(DiscoveredStory, ArticleDraft.story_id == DiscoveredStory.id)
                 .where(ArticleDraft.status == "pending_review")
-                .order_by(ArticleDraft.created_at.asc())
+                .order_by(
+                    DiscoveredStory.published_at.desc().nullslast(),
+                    ArticleDraft.created_at.desc(),
+                )
                 .limit(limit)
             ).all()
         )

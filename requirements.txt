@@ -13,13 +13,16 @@ requests==2.33.1
 httpx==0.28.1
 
 # ── News Sources (Stage 1) ────────────────────────────────
-newsapi-python>=0.2.7        # no wheel pinned — install from PyPI
+newsapi-python>=0.2.7        # no wheel pinned -- install from PyPI
+pytrends>=4.9.2              # Google Trends (handles auth/cookie quirks)
 praw==7.8.1                  # Reddit
+tweepy==4.14.0               # Twitter / X API v2
 feedparser==6.0.12           # RSS feeds
 python-dateutil==2.9.0.post0
 
 # ── Security ──────────────────────────────────────────────
 bleach==6.3.0
+itsdangerous==2.2.0
 
 # ── AI Writing (Stage 3+4) ────────────────────────────────
 anthropic==0.102.0

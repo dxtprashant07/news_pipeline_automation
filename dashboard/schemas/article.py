@@ -11,9 +11,11 @@ class ArticleSummary(BaseModel):
     word_count: int
     focus_keyword: str
     credibility_score: int
+    seo_score: int = 0
     source_url: str
     status: str
     created_at: datetime
+    published_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 
@@ -24,6 +26,7 @@ class ArticleDetail(ArticleSummary):
     meta_description: str
     secondary_keywords: list[str]
     schema_markup: dict
+    seo_breakdown: dict = {}
     editor_notes: str
     image_url: str
 

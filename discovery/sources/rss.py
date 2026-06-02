@@ -8,6 +8,38 @@ from core.utils.rate_limiter import get_limiter
 from core.utils.retry import with_retry
 
 
+def _extract_image(entry) -> str:
+    """Pull the best available image URL out of a feedparser entry."""
+    # media:thumbnail (most common in news feeds)
+    thumbnails = getattr(entry, "media_thumbnail", None) or []
+    if thumbnails and isinstance(thumbnails, list):
+        url = thumbnails[0].get("url", "")
+        if url:
+            return url
+
+    # media:content with image mime type
+    media = getattr(entry, "media_content", None) or []
+    for m in media:
+        url = m.get("url", "")
+        mime = m.get("type", "")
+        if url and ("image" in mime or url.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))):
+            return url
+
+    # enclosure (podcast/media feed style)
+    for enc in getattr(entry, "enclosures", []) or []:
+        url = enc.get("href", "") or enc.get("url", "")
+        if url and "image" in enc.get("type", ""):
+            return url
+
+    # <img> inside the summary HTML
+    summary_html = entry.get("summary") or entry.get("content", [{}])[0].get("value", "")
+    m = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', summary_html, re.IGNORECASE)
+    if m:
+        return m.group(1)
+
+    return ""
+
+
 class RSSFeedSource(BaseSource):
     name = "rss"
 
@@ -65,7 +97,7 @@ class RSSFeedSource(BaseSource):
                 source_name=source_name,
                 published_at=published_at,
                 summary=summary[:500],
-                image_url="",
+                image_url=_extract_image(entry),
                 extra={"feed_url": url, "feed_category": category},
             ))
 
