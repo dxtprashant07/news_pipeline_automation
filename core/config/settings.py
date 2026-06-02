@@ -93,6 +93,15 @@ class Settings(BaseSettings):
     ga4_property_id: str = ""
     google_service_account_json: str = ""  # path to service account key file
 
+    @field_validator("buffer_profile_ids", mode="before")
+    @classmethod
+    def parse_buffer_profile_ids(cls, v):
+        if not v:
+            return []
+        if isinstance(v, list):
+            return v
+        return [x.strip() for x in str(v).split(",") if x.strip()]
+
     @field_validator("geo_focus")
     @classmethod
     def validate_geo(cls, v: str) -> str:
