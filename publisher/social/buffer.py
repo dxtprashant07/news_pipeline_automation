@@ -24,14 +24,15 @@ class BufferDistributor(SocialChannel):
         if not self.settings.buffer_access_token:
             self.logger.warning("BUFFER_ACCESS_TOKEN not set — skipping social distribution")
             return []
-        if not self.settings.buffer_profile_ids:
+        profile_ids = self.settings.buffer_profile_id_list
+        if not profile_ids:
             self.logger.warning("BUFFER_PROFILE_IDS not set — skipping social distribution")
             return []
 
         update_ids: list[str] = []
         text = f"{headline}\n\n{post_url} #{category}"
 
-        for profile_id in self.settings.buffer_profile_ids:
+        for profile_id in profile_ids:
             try:
                 self.limiter.acquire()
                 resp = requests.post(

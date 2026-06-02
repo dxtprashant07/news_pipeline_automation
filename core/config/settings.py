@@ -83,7 +83,7 @@ class Settings(BaseSettings):
 
     # ── Social Distribution (Stage 6) ─────────────────────
     buffer_access_token: str = ""
-    buffer_profile_ids: list[str] = []
+    buffer_profile_ids: str = ""  # comma-separated profile IDs
 
     # ── Newsletter (Stage 6) ───────────────────────────────
     mailchimp_api_key: str = ""
@@ -93,14 +93,9 @@ class Settings(BaseSettings):
     ga4_property_id: str = ""
     google_service_account_json: str = ""  # path to service account key file
 
-    @field_validator("buffer_profile_ids", mode="before")
-    @classmethod
-    def parse_buffer_profile_ids(cls, v):
-        if not v:
-            return []
-        if isinstance(v, list):
-            return v
-        return [x.strip() for x in str(v).split(",") if x.strip()]
+    @property
+    def buffer_profile_id_list(self) -> list[str]:
+        return [x.strip() for x in self.buffer_profile_ids.split(",") if x.strip()]
 
     @field_validator("geo_focus")
     @classmethod
