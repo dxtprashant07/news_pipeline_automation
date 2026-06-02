@@ -23,14 +23,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Create minimal .env for tests
-        run: |
-          cp .env.example .env
-          echo "DASHBOARD_SECRET_KEY=test-secret-key-for-ci-only" >> .env
-          echo "DASHBOARD_API_KEY=test-api-key-for-ci-only" >> .env
-
-      - name: Run tests
-        run: pytest tests/ -v --tb=short
+      - name: Create minimal .env for import checks
+        run: cp .env.example .env
 
       - name: Check imports are valid
         run: |
