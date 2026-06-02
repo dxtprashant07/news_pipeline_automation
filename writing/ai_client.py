@@ -60,6 +60,7 @@ def _call_anthropic(*, model: str, api_key: str, system_text: str, user_text: st
     response = client.messages.create(
         model=model,
         max_tokens=max_tokens,
+        temperature=1.0,
         system=[system_block],
         messages=[{"role": "user", "content": user_text}],
     )
@@ -77,6 +78,7 @@ def _call_openai(*, model: str, api_key: str, system_text: str, user_text: str,
     response = client.chat.completions.create(
         model=model,
         max_tokens=max_tokens,
+        temperature=1.2,
         messages=[
             {"role": "system", "content": system_text},
             {"role": "user",   "content": user_text},

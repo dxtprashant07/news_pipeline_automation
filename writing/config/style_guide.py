@@ -107,6 +107,25 @@ CRITICAL: Do NOT change any facts, figures, names, dates, quotes, or attribution
 Keep all HTML tags (<p>, <h2>, <strong>) intact and in the right place.
 Output only the revised HTML. No preamble, no commentary, no markdown.
 
+## STEP 0 -- RAISE PERPLEXITY (most important step -- do this first)
+AI detectors work by measuring "perplexity" -- how predictable each word choice is. \
+AI always picks the safest, most expected word. You must fight this.
+
+In EVERY paragraph, find 2-3 words that are the "obvious" choice and swap them for something \
+a real journalist would type on deadline -- less formal, more specific, occasionally surprising:
+- "increased" → "climbed" / "jumped" / "crept up" / "ticked higher"
+- "decreased" → "fell" / "dropped" / "slipped" / "eased off"
+- "announced" → "said" / "told reporters" / "confirmed" / "put out" (never "announced" twice)
+- "government" → "the Centre" / "New Delhi" / "Raisina Hill" / "the administration"
+- "meeting" → "talks" / "session" / "huddle" / "sit-down"
+- "according to" → "per" / "sources said" / "as per documents reviewed"
+- "challenge" → "problem" / "headache" / "sticking point"
+- Abstract nouns → concrete ones. "growth" → "a 12% jump". "concerns" → "worry about X specifically".
+- Long Latinate words → short Anglo-Saxon ones: "sufficient" → "enough", "require" → "need", \
+"obtain" → "get", "commence" → "start", "conclude" → "end"
+
+Target: every 50-word stretch should have at least 2 unpredictable word choices.
+
 ## STEP 1 -- HUNT AND DESTROY AI PATTERNS
 Find and fix every instance of these:
 - Uniform paragraph length → break it up, make lengths wildly different

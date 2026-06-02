@@ -59,6 +59,7 @@ def _post_process(html: str) -> str:
         (r"\bIt goes without saying that\s*", ""),
         (r"\bIn a significant development\b,?\s*", ""),
         (r"\bIn a major development\b,?\s*", ""),
+        (r"\bIn a landmark\b,?\s*",  ""),
         (r"\bMoving forward\b,?\s*", "Going ahead, "),
         (r"\bGoing forward\b,?\s*",  "Going ahead, "),
         (r"\bLeverage\b",            "use"),
@@ -89,9 +90,69 @@ def _post_process(html: str) -> str:
         (r"\bfacilitate\b",          "help"),
         (r"\bascertain\b",           "find out"),
         (r"\bendeavour\b",           "try"),
+        (r"\bprovide\b",             "give"),
+        (r"\bProvide\b",             "Give"),
+        (r"\bensure\b",              "make sure"),
+        (r"\bEnsure\b",              "Make sure"),
+        (r"\bkey\s+(?=\w)",          ""),
+        (r"\bcrucial\b",             "critical"),
+        (r"\bvital\b",               "important"),
+        (r"\blandscape\b",           "space"),
+        (r"\becosystem\b",           "network"),
+        (r"\bstakeholders\b",        "those involved"),
+        (r"\bStakeholders\b",        "Those involved"),
+        (r"\binitiative\b",          "push"),
+        (r"\bInitiative\b",          "Push"),
+        (r"\bchallenge\b",           "problem"),
+        (r"\bChallenge\b",           "Problem"),
+        (r"\bThis comes as\b",       ""),
+        (r"\bAmid\b(?!\s+the\s+backdrop)", "As"),
+        (r"\bSeek to\b",             "Want to"),
+        (r"\bseek to\b",             "want to"),
+        (r"\baim to\b",              "plan to"),
+        (r"\bAim to\b",              "Plan to"),
     ]
     for pattern, replacement in REPLACEMENTS:
         html = re.sub(pattern, replacement, html)
+
+    # 2. Randomised synonyms — same word maps to a different replacement each run.
+    # This raises perplexity scores by making word choice genuinely unpredictable.
+    RANDOM_SYNONYMS = [
+        (r"\bincreased\b",   ["climbed", "jumped", "grew", "rose", "went up"]),
+        (r"\bIncreased\b",   ["Climbed", "Jumped", "Grew", "Rose"]),
+        (r"\bdecreased\b",   ["fell", "dropped", "slipped", "eased", "came down"]),
+        (r"\bDecreased\b",   ["Fell", "Dropped", "Slipped", "Eased"]),
+        (r"\bannounced\b",   ["said", "confirmed", "put out", "told reporters"]),
+        (r"\bAnnounced\b",   ["Said", "Confirmed", "Put out"]),
+        (r"\bmeeting\b",     ["talks", "session", "huddle", "sit-down"]),
+        (r"\bMeeting\b",     ["Talks", "Session", "Huddle"]),
+        (r"\bissue\b",       ["problem", "matter", "question", "headache"]),
+        (r"\bIssue\b",       ["Problem", "Matter", "Question"]),
+        (r"\bstated\b",      ["said", "put it", "told reporters"]),
+        (r"\bStated\b",      ["Said", "Put it"]),
+        (r"\bnoted\b",       ["said", "pointed out", "added"]),
+        (r"\bNoted\b",       ["Said", "Pointed out", "Added"]),
+        (r"\bhighlighted\b", ["pointed to", "flagged", "stressed", "mentioned"]),
+        (r"\bHighlighted\b", ["Pointed to", "Flagged", "Stressed"]),
+        (r"\bremains\b",     ["is still", "stays", "continues to be"]),
+        (r"\bRemains\b",     ["Is still", "Stays", "Continues to be"]),
+        (r"\blarge\b",       ["big", "sizable", "hefty", "major"]),
+        (r"\bLarge\b",       ["Big", "Sizable", "Hefty"]),
+        (r"\bsmall\b",       ["modest", "limited", "slim", "minor"]),
+        (r"\bSmall\b",       ["Modest", "Limited", "Slim"]),
+        (r"\bquickly\b",     ["fast", "swiftly", "rapidly", "in short order"]),
+        (r"\bslowly\b",      ["gradually", "over time", "in stages"]),
+        (r"\bexpected\b",    ["likely", "set", "due", "anticipated"]),
+        (r"\bExpected\b",    ["Likely", "Set", "Due"]),
+        (r"\bnumerous\b",    ["many", "several", "a string of", "a host of"]),
+        (r"\bNumerous\b",    ["Many", "Several", "A host of"]),
+        (r"\battempt\b",     ["try", "bid", "push", "effort"]),
+        (r"\bAttempt\b",     ["Try", "Bid", "Push"]),
+        (r"\bapproach\b",    ["way", "path", "method", "tactic"]),
+        (r"\bApproach\b",    ["Way", "Path", "Method"]),
+    ]
+    for pattern, alternatives in RANDOM_SYNONYMS:
+        html = re.sub(pattern, lambda _m, a=alternatives: random.choice(a), html)
 
     # 2. Fix double spaces or sentence starts left by replacements
     html = re.sub(r"  +", " ", html)
