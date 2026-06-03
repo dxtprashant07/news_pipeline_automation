@@ -2,7 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install dependencies first (layer cached unless requirements.txt changes)
+# Install PostgreSQL driver separately so it is never skipped by layer cache
+RUN pip install --no-cache-dir psycopg2-binary
+
+# Install remaining dependencies (layer cached unless requirements.txt changes)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
