@@ -7,7 +7,19 @@ from ..utils.logger import get_logger
 logger = get_logger("db.session")
 
 
+def _normalise_db_url(url: str) -> str:
+    # Railway provides postgres:// — SQLAlchemy requires postgresql://
+    if url.startswith("postgres://"):
+        url = "postgresql+pg8000://" + url[len("postgres://"):]
+    # Force pg8000 driver (pure Python — no binary dependency)
+    elif url.startswith("postgresql://"):
+        url = "postgresql+pg8000://" + url[len("postgresql://"):]
+    return url
+
+
 def _make_engine(database_url: str):
+    database_url = _normalise_db_url(database_url)
+
     connect_args = {}
     if database_url.startswith("sqlite"):
         connect_args = {"check_same_thread": False}

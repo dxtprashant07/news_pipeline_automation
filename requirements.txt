@@ -4,7 +4,7 @@ pydantic-settings==2.13.1
 
 # ── Database ───────────────────────────────────────────────
 SQLAlchemy==2.0.49
-psycopg2-binary>=2.9.9
+pg8000>=1.30.0
 
 # ── Scheduler ─────────────────────────────────────────────
 APScheduler==3.11.2
