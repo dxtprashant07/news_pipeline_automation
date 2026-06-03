@@ -16,7 +16,7 @@ USER appuser
 # Database and log directories
 RUN mkdir -p logs
 
-EXPOSE 8000
+EXPOSE 8080
 
-# Production: gunicorn with uvicorn workers — PORT is set by Railway
-CMD ["gunicorn", "dashboard.app:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--workers", "2", "--bind", "0.0.0.0:8000", "--access-logfile", "-", "--error-logfile", "-"]
+# Railway sets PORT=8080 — bind to it explicitly
+CMD ["gunicorn", "dashboard.app:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--workers", "2", "--bind", "0.0.0.0:8080", "--access-logfile", "-", "--error-logfile", "-"]
