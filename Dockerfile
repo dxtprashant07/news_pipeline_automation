@@ -18,10 +18,5 @@ RUN mkdir -p logs
 
 EXPOSE 8000
 
-# Production: gunicorn with uvicorn workers
-CMD ["gunicorn", "dashboard.app:app", \
-     "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--workers", "2", \
-     "--bind", "0.0.0.0:8000", \
-     "--access-logfile", "-", \
-     "--error-logfile", "-"]
+# Production: gunicorn with uvicorn workers — PORT is set by Railway
+CMD ["sh", "-c", "gunicorn dashboard.app:app --worker-class uvicorn.workers.UvicornWorker --workers 2 --bind 0.0.0.0:${PORT:-8000} --access-logfile - --error-logfile -"]
