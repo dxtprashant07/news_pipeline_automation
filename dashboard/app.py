@@ -81,6 +81,9 @@ def _bootstrap_admin():
             db.commit()
             logger.info("Bootstrapped admin user '%s' from .env", admin.username)
     except Exception as exc:
+        # Duplicate key = another worker already created the admin — safe to ignore
+        if "duplicate" in str(exc).lower() or "unique" in str(exc).lower():
+            return
         logger.warning("Could not bootstrap admin user: %s", exc)
 
 
