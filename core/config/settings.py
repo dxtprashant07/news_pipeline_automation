@@ -3,10 +3,13 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator
 
+# Absolute path to .env — works regardless of the process working directory.
+_ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env" if Path(".env").exists() else None,
+        env_file=str(_ENV_FILE) if _ENV_FILE.exists() else None,
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -37,10 +40,12 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     openai_api_key: str = ""
     gemini_api_key: str = ""
+    groq_api_key: str = ""
 
     # Model routing — provider inferred from model name prefix:
-    #   claude-*  → Anthropic   |  gpt-* / o1-* → OpenAI   |  gemini-* → Google
-    article_model: str = "claude-sonnet-4-6"
+    #   claude-*             → Anthropic   |  gpt-* / o1-* → OpenAI
+    #   gemini-*             → Google      |  llama-* / mixtral-* / gemma* → Groq
+    article_model: str = "llama-3.3-70b-versatile"
     seo_model: str = ""          # falls back to article_model if empty
 
     # ── Fact Verification (Stage 3) ────────────────────────
@@ -133,6 +138,7 @@ class Settings(BaseSettings):
                 self.anthropic_api_key,
                 self.openai_api_key,
                 self.gemini_api_key,
+                self.groq_api_key,
                 self.bing_search_api_key,
                 self.wordpress_app_password,
                 self.buffer_access_token,
@@ -154,13 +160,14 @@ def get_settings() -> Settings:
     global _settings_mtime
     global _cached_settings
 
-    env_file = Path(".env")
     try:
-        mtime = env_file.stat().st_mtime if env_file.exists() else 0.0
+        mtime = _ENV_FILE.stat().st_mtime if _ENV_FILE.exists() else 0.0
     except OSError:
         mtime = 0.0
 
     if mtime != _settings_mtime or "_cached_settings" not in globals():
+        from dotenv import load_dotenv
+        load_dotenv(dotenv_path=_ENV_FILE, override=True)
         _cached_settings = Settings()
         _settings_mtime  = mtime
 

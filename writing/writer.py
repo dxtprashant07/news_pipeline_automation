@@ -4,7 +4,7 @@ import html as html_lib
 
 from .ai_client import generate
 from .models import ArticleDraft, SEOMetadata
-from .config.style_guide import STYLE_GUIDE, HUMANIZE_PROMPT, REPORTER_PERSONAS
+from .config.style_guide import STYLE_GUIDE, HUMANIZE_PROMPT, EXTEND_PROMPT, REPORTER_PERSONAS, SEO_FIX_PROMPT
 from verification.models import VerificationResult
 from core.config.settings import get_settings
 from core.utils.logger import get_logger
@@ -205,6 +205,33 @@ def _post_process(html: str) -> str:
     return html
 
 
+def _extract_new_paragraphs(raw: str) -> str:
+    """
+    Pull only <p> and <h2> tags from the extension model's output.
+    The model is asked to return new paragraphs only, but may include prose preamble.
+    """
+    raw = raw.strip()
+    # Strip markdown fences if present
+    raw = re.sub(r"^```(?:html)?\s*", "", raw)
+    raw = re.sub(r"\s*```$", "", raw)
+    # Extract all <p> and <h2> blocks — ignore anything outside tags
+    tags = re.findall(r"<(?:p|h2)[^>]*>.*?</(?:p|h2)>", raw, re.IGNORECASE | re.DOTALL)
+    return "\n".join(tags).strip()
+
+
+def _append_before_last_p(article_html: str, new_content: str) -> str:
+    """Insert new_content before the final <p> block so the closing paragraph stays last."""
+    if not new_content:
+        return article_html
+    # Find the start of the last <p>...</p>
+    matches = list(re.finditer(r"<p[^>]*>.*?</p>", article_html, re.IGNORECASE | re.DOTALL))
+    if len(matches) >= 2:
+        insert_at = matches[-1].start()
+        return article_html[:insert_at] + new_content + "\n" + article_html[insert_at:]
+    # Only one paragraph or none — just append
+    return article_html + "\n" + new_content
+
+
 def _format_sources(verification: VerificationResult) -> str:
     if not verification.sources_found:
         return "No additional sources available."
@@ -236,7 +263,9 @@ class ArticleWriter:
     ) -> ArticleDraft:
         model = ai_model   if ai_model   is not None else self.settings.article_model
         wc    = word_count if word_count is not None else self.settings.article_word_count
-        max_tokens = max(self.settings.article_max_tokens, int(wc * 3))
+        # Budget: ~1.4 tokens/word for content + overhead for system prompt.
+        # Groq caps at 8192 per call — _call_groq enforces that internally.
+        max_tokens = max(4096, int(wc * 6))
 
         # Pick a random reporter persona for voice variety
         persona = random.choice(REPORTER_PERSONAS)
@@ -245,15 +274,21 @@ class ArticleWriter:
             f"story {story.id}: '{story.title[:55]}'"
         )
 
+        _gen_kwargs = dict(
+            model=model,
+            anthropic_api_key=self.settings.anthropic_api_key,
+            openai_api_key=self.settings.openai_api_key,
+            gemini_api_key=self.settings.gemini_api_key,
+            groq_api_key=self.settings.groq_api_key,
+            max_tokens=max_tokens,
+        )
+
         # ── Pass 1: Write draft (with retry on short output) ──────────────────
         draft_html  = ""
         draft_words = 0
         for attempt in range(1, 4):       # up to 3 attempts
             draft_raw  = generate(
-                model=model,
-                anthropic_api_key=self.settings.anthropic_api_key,
-                openai_api_key=self.settings.openai_api_key,
-                gemini_api_key=self.settings.gemini_api_key,
+                **_gen_kwargs,
                 system_text=STYLE_GUIDE.format(word_count=wc),
                 user_text=self._build_user_message(
                     story, verification,
@@ -261,7 +296,6 @@ class ArticleWriter:
                     secondary_keywords=secondary_keywords or [],
                     persona=persona,
                 ),
-                max_tokens=max_tokens,
                 cache_system=True,
             )
             draft_html  = _clean_article_html(draft_raw)
@@ -282,27 +316,83 @@ class ArticleWriter:
                     f"for story {story.id}."
                 )
 
+        # ── Pass 1b: Append new paragraphs until target word count is reached ──
+        for ext_round in range(1, 4):          # up to 3 extension rounds
+            if draft_words >= int(wc * 0.97):  # within 3% of target — done
+                break
+            needed = wc - draft_words
+            logger.info(
+                f"  Extend round {ext_round}: {draft_words}w → target {wc}w "
+                f"(need ~{needed}w more)"
+            )
+            ext_raw = generate(
+                **_gen_kwargs,
+                system_text=EXTEND_PROMPT,
+                user_text=self._build_extend_message(draft_html, draft_words, wc),
+                cache_system=False,
+            )
+            # The model returns ONLY the new paragraphs — extract and append
+            new_paras = _extract_new_paragraphs(ext_raw)
+            new_words = _count_words(new_paras)
+            if new_words < 30:
+                logger.warning(f"  Extend round {ext_round}: got too few words ({new_words}w) — stopping")
+                break
+            # Append before the last <p> so the closing paragraph stays at the end
+            draft_html  = _append_before_last_p(draft_html, new_paras)
+            prev_words  = draft_words
+            draft_words = _count_words(draft_html)
+            logger.info(f"  Extend round {ext_round}: {prev_words}w → {draft_words}w (+{new_words}w)")
+
         # ── Pass 2: Humanize ──────────────────────────────────────────────────
         humanized_raw = generate(
-            model=model,
-            anthropic_api_key=self.settings.anthropic_api_key,
-            openai_api_key=self.settings.openai_api_key,
-            gemini_api_key=self.settings.gemini_api_key,
+            **_gen_kwargs,
             system_text=HUMANIZE_PROMPT,
             user_text=draft_html,
-            max_tokens=max_tokens,
             cache_system=False,
         )
         humanized_html = _clean_article_html(humanized_raw)
 
         humanized_words = _count_words(humanized_html)
-        if humanized_words < draft_words * 0.65:
+        if humanized_words < draft_words * 0.88:
             logger.warning(
                 f"  Humanizer shrunk {draft_words}→{humanized_words}w — keeping draft."
             )
             humanized_html = draft_html
 
-        # ── Pass 3: Rule-based post-processing ───────────────────────────────
+        # ── Pass 3: SEO fix (only if structural gaps found) ──────────────────
+        h2_count  = len(re.findall(r"<h2[^>]*>", humanized_html, re.IGNORECASE))
+        plain     = re.sub(r"<[^>]+>", " ", humanized_html).lower()
+        kw_lower  = focus_keyword.lower()
+        first_p   = re.search(r"<p[^>]*>(.*?)</p>", humanized_html, re.IGNORECASE | re.DOTALL)
+        kw_in_open = kw_lower in re.sub(r"<[^>]+>", " ", first_p.group(1)).lower() if first_p else False
+        missing_sec = [k for k in (secondary_keywords or []) if k.lower() not in plain]
+
+        needs_seo_fix = h2_count < 2 or not kw_in_open or len(missing_sec) >= 1
+        if needs_seo_fix:
+            issues = []
+            if h2_count < 2:
+                issues.append(f"missing H2 subheadings (found {h2_count}, need at least 2)")
+            if not kw_in_open:
+                issues.append(f'focus keyword "{focus_keyword}" not in opening paragraph')
+            if missing_sec:
+                issues.append(f"missing secondary keywords: {', '.join(missing_sec)}")
+            logger.info(f"  SEO fix pass — {'; '.join(issues)}")
+            fix_raw = generate(
+                **_gen_kwargs,
+                system_text=SEO_FIX_PROMPT,
+                user_text=self._build_seo_fix_message(
+                    humanized_html, focus_keyword, secondary_keywords or [],
+                    h2_count, kw_in_open, missing_sec,
+                ),
+                cache_system=False,
+            )
+            fixed = _clean_article_html(fix_raw)
+            if _count_words(fixed) >= _count_words(humanized_html) * 0.85:
+                humanized_html = fixed
+            else:
+                logger.warning("  SEO fix shrunk article too much — keeping humanized version")
+
+        # ── Pass 4: Rule-based post-processing ───────────────────────────────
         article_html  = _post_process(humanized_html)
         final_words   = _count_words(article_html)
 
@@ -331,11 +421,12 @@ class ArticleWriter:
         if focus_keyword:
             kw_list = ", ".join(f'"{k}"' for k in (secondary_keywords or []))
             seo_block = f"""
-**SEO Requirements** (mandatory — article is scored on these):
+**SEO Requirements** (HARD — article is scored algorithmically):
 - FOCUS KEYWORD: "{focus_keyword}"
-  → Must appear in the first paragraph, first 2 sentences preferred
-  → Use naturally 3-5 times total — do not stuff it
-- SECONDARY KEYWORDS (include each at least once): {kw_list or "(none)"}
+  → MUST appear in the FIRST SENTENCE of the FIRST paragraph
+  → Use naturally 3-5 times total across the full article
+- SECONDARY KEYWORDS — include EACH of these at least once in the body: {kw_list or "(none)"}
+- SUBHEADINGS: Include at least 2 <h2> tags. No fewer.
 """
 
         persona_block = f"\n**Your writing style for this article**: {persona}\n" if persona else ""
@@ -354,3 +445,55 @@ class ArticleWriter:
 {_format_sources(verification)}
 {seo_block}{persona_block}
 Output HTML article body only. No preamble, no closing note, no markdown."""
+
+    def _build_extend_message(self, article_html: str, current_words: int, target_words: int) -> str:
+        needed = target_words - current_words
+        # Send only the last 2 paragraphs as context — enough for natural continuation
+        # while keeping the request small (avoids Groq TPM overflow).
+        paragraphs = re.findall(r"<p[^>]*>.*?</p>", article_html, re.IGNORECASE | re.DOTALL)
+        tail = "\n".join(paragraphs[-2:]) if len(paragraphs) >= 2 else article_html
+        return (
+            f"Add approximately {needed} more words to this news article. "
+            f"Continue naturally from the last paragraphs shown below.\n\n"
+            f"LAST PARAGRAPHS:\n{tail}\n\n"
+            f"Output ONLY the new <p> paragraphs to add. Do not repeat anything above."
+        )
+
+    def _build_seo_fix_message(
+        self,
+        article_html: str,
+        focus_keyword: str,
+        secondary_keywords: list[str],
+        h2_count: int,
+        kw_in_open: bool,
+        missing_sec: list[str],
+    ) -> str:
+        issues = []
+        if h2_count < 2:
+            issues.append(
+                f"- ADD subheadings: the article has only {h2_count} <h2> tag(s). "
+                "Add subheadings so there are at least 2 total. "
+                "Place them at natural section breaks. Make them sound like a real editor wrote them."
+            )
+        if not kw_in_open:
+            issues.append(
+                f'- ADD FOCUS KEYWORD to opening: "{focus_keyword}" must appear in the first <p> paragraph, '
+                "within the first two sentences. Edit the opening to include it naturally."
+            )
+        if missing_sec:
+            kw_list = ", ".join(f'"{k}"' for k in missing_sec)
+            issues.append(
+                f"- ADD MISSING KEYWORDS: these secondary keywords do not appear in the article and must be "
+                f"woven in naturally at least once each: {kw_list}"
+            )
+        issues_text = "\n".join(issues)
+        return f"""Fix the following SEO issues in this article. Make ONLY the minimal changes needed to address each issue. \
+Do not rewrite paragraphs that are already fine. Preserve all existing HTML structure, style, and content.
+
+ISSUES TO FIX:
+{issues_text}
+
+ARTICLE TO FIX:
+{article_html}
+
+Output the complete fixed HTML article body only. No preamble, no commentary."""

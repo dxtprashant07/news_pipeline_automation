@@ -524,7 +524,7 @@
     .panel-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
     .panel-body { flex: 1; overflow-y: auto; }
-    #panel-tab-article { padding: 1.5rem; }
+    #panel-tab-article { padding: 0; }
 
     .article-html { font-size: 0.875rem; line-height: 1.85; color: var(--text-1); }
     .article-html p { margin-bottom: 1rem; }
@@ -539,6 +539,19 @@
       border-left: 3px solid var(--accent); padding-left: 1rem;
       color: var(--text-2); margin: 1rem 0;
     }
+
+    .article-featured-img {
+      width: 100%; max-height: 300px; object-fit: cover;
+      border-radius: var(--r); margin-bottom: 1.25rem;
+      display: block; background: var(--surface-2);
+    }
+    .article-img-wrap { display: none; }
+    .article-img-wrap.has-image { display: block; }
+
+    .btn-download {
+      background: var(--surface-2); color: var(--text-2); border-color: var(--border);
+    }
+    .btn-download:hover { background: var(--surface-3); color: var(--text-1); }
 
     /* ───── REJECT MODAL ───── */
     .modal-backdrop {
@@ -688,134 +701,168 @@
     /* ───── PIPELINE CONFIG MODAL ───── */
     .pc-backdrop {
       display: none; position: fixed; inset: 0;
-      background: rgba(1,4,9,0.8); backdrop-filter: blur(6px); z-index: 200;
+      background: rgba(1,4,9,0.85); backdrop-filter: blur(8px); z-index: 200;
       align-items: center; justify-content: center; padding: 1rem;
     }
     .pc-backdrop.open { display: flex; }
 
     .pc-modal {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 16px; width: 100%; max-width: 540px;
-      box-shadow: var(--sh-lg); animation: modalIn 0.2s cubic-bezier(0.22,1,0.36,1);
-      display: flex; flex-direction: column; max-height: 90vh;
+      background: var(--surface); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px; width: 100%; max-width: 560px;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+      animation: modalIn 0.25s cubic-bezier(0.22,1,0.36,1);
+      display: flex; flex-direction: column; max-height: 92vh;
     }
 
     .pc-header {
-      padding: 1.4rem 1.5rem 1.1rem;
+      padding: 1.4rem 1.5rem 1.25rem;
       border-bottom: 1px solid var(--border);
-      display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0;
+      display: flex; align-items: flex-start; justify-content: space-between;
+      flex-shrink: 0; position: relative; overflow: hidden;
     }
-    .pc-title     { font-size: 1rem; font-weight: 700; color: var(--text-1); }
-    .pc-subtitle  { font-size: 0.75rem; color: var(--text-3); margin-top: 2px; }
-
-    .pc-body { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.4rem; }
-
-    .pc-section { display: flex; flex-direction: column; gap: 0.5rem; }
-    .pc-label {
-      font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--text-3);
-      display: flex; align-items: center; justify-content: space-between;
+    .pc-header::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2), transparent);
     }
-    .pc-val {
-      font-size: 0.82rem; font-weight: 700; color: var(--accent);
-      text-transform: none; letter-spacing: 0; min-width: 60px; text-align: right;
+    .pc-header-left { display: flex; align-items: center; gap: 0.85rem; }
+    .pc-header-icon {
+      width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+      background: var(--accent-bg); border: 1px solid rgba(99,102,241,0.2);
+      display: flex; align-items: center; justify-content: center; color: var(--accent);
+    }
+    .pc-title    { font-size: 0.95rem; font-weight: 700; color: var(--text-1); }
+    .pc-subtitle { font-size: 0.72rem; color: var(--text-3); margin-top: 2px; }
+
+    .pc-body { flex: 1; overflow-y: auto; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+
+    /* section card */
+    .pc-card {
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .pc-card-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .pc-card-label {
+      display: flex; align-items: center; gap: 0.55rem;
+      font-size: 0.78rem; font-weight: 600; color: var(--text-2);
+    }
+    .pc-card-icon {
+      width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+      background: var(--surface-3); color: var(--text-3);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pc-val-pill {
+      background: var(--accent-bg); border: 1px solid rgba(99,102,241,0.25);
+      color: var(--accent); font-size: 0.75rem; font-weight: 700;
+      padding: 2px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0;
     }
 
-    /* slider */
+    /* filled slider */
     .pc-slider {
       -webkit-appearance: none; appearance: none;
-      width: 100%; height: 5px; border-radius: 3px; outline: none;
-      background: var(--surface-3); cursor: pointer;
+      width: 100%; height: 5px; border-radius: 3px; outline: none; cursor: pointer;
+      background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--fill,18%), var(--surface-3) var(--fill,18%), var(--surface-3) 100%);
     }
     .pc-slider::-webkit-slider-thumb {
       -webkit-appearance: none; appearance: none;
-      width: 17px; height: 17px; border-radius: 50%;
-      background: var(--accent); cursor: pointer;
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
-      transition: box-shadow 0.15s;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #fff; cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 0 0 2px var(--accent);
+      transition: transform 0.1s, box-shadow 0.1s;
     }
-    .pc-slider::-webkit-slider-thumb:hover { box-shadow: 0 0 0 5px rgba(99,102,241,0.3); }
-    .pc-slider::-moz-range-thumb {
-      width: 17px; height: 17px; border-radius: 50%; border: none;
-      background: var(--accent); cursor: pointer;
-    }
-    .pc-slider-track {
-      position: relative; height: 5px; background: var(--surface-3); border-radius: 3px; overflow: hidden;
-    }
+    .pc-slider::-webkit-slider-thumb:hover { transform: scale(1.15); box-shadow: 0 1px 6px rgba(0,0,0,0.5), 0 0 0 3px var(--accent); }
+    .pc-slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; border: none; background: #fff; cursor: pointer; box-shadow: 0 0 0 2px var(--accent); }
+    .pc-ticks { display: flex; justify-content: space-between; font-size: 0.62rem; color: var(--text-3); margin-top: 4px; padding: 0 1px; }
 
-    /* slider tick labels */
-    .pc-ticks {
-      display: flex; justify-content: space-between;
-      font-size: 0.65rem; color: var(--text-3); margin-top: 3px; padding: 0 1px;
+    /* category chips */
+    .pc-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .pc-chip {
+      padding: 4px 11px; border: 1px solid var(--border); border-radius: 20px;
+      font-size: 0.71rem; font-weight: 500; color: var(--text-3);
+      background: transparent; cursor: pointer; transition: all 0.12s; font-family: inherit;
     }
+    .pc-chip:hover { border-color: var(--accent); color: var(--text-1); background: var(--accent-bg); }
+    .pc-chip.active { background: var(--accent-bg); border-color: rgba(99,102,241,0.45); color: var(--accent); font-weight: 600; }
 
-    /* select */
+    /* model select */
     .pc-select {
       width: 100%; padding: 0.6rem 0.85rem;
-      background: var(--surface-2); border: 1px solid var(--border);
-      border-radius: var(--r); color: var(--text-1); font-size: 0.85rem;
-      font-family: inherit; outline: none; cursor: pointer;
-      transition: border-color 0.15s;
+      background: var(--surface-3); border: 1px solid var(--border);
+      border-radius: var(--r); color: var(--text-1); font-size: 0.83rem;
+      font-family: inherit; outline: none; cursor: pointer; transition: border-color 0.15s;
     }
     .pc-select:focus { border-color: var(--border-hi); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
 
-    /* stage toggles */
-    .pc-stages { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    /* pipeline stage toggles */
+    .pc-stages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
     .pc-stage-btn {
-      flex: 1; min-width: 120px; padding: 0.65rem 1rem;
-      border: 1px solid var(--border); border-radius: var(--r);
-      background: var(--surface-2); cursor: pointer;
-      display: flex; align-items: center; gap: 0.5rem;
-      font-family: inherit; font-size: 0.78rem; font-weight: 500; color: var(--text-2);
-      transition: all 0.12s;
+      padding: 0.85rem 0.6rem 0.75rem;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      background: transparent; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 0.45rem;
+      font-family: inherit; text-align: center; transition: all 0.15s;
+      position: relative;
     }
-    .pc-stage-btn.active {
-      background: var(--accent-bg); border-color: rgba(99,102,241,0.35); color: var(--accent);
+    .pc-stage-btn:hover { border-color: rgba(99,102,241,0.4); background: rgba(99,102,241,0.04); }
+    .pc-stage-btn.active { background: var(--accent-bg); border-color: rgba(99,102,241,0.5); }
+    .pc-stage-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: var(--surface-3); display: flex; align-items: center; justify-content: center;
+      color: var(--text-3); transition: all 0.15s;
     }
-    .pc-stage-dot {
-      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-      background: var(--surface-3); transition: background 0.12s;
+    .pc-stage-btn.active .pc-stage-icon { background: rgba(99,102,241,0.15); color: var(--accent); }
+    .pc-stage-name { font-size: 0.72rem; font-weight: 600; color: var(--text-2); transition: color 0.15s; }
+    .pc-stage-btn.active .pc-stage-name { color: var(--accent); }
+    .pc-stage-desc { font-size: 0.62rem; color: var(--text-3); line-height: 1.3; }
+    .pc-stage-check {
+      position: absolute; top: 0.45rem; right: 0.45rem;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--surface-3); border: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center; transition: all 0.15s;
     }
-    .pc-stage-btn.active .pc-stage-dot { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+    .pc-stage-btn.active .pc-stage-check { background: var(--accent); border-color: var(--accent); }
 
-    /* summary row */
-    .pc-summary {
-      background: var(--surface-2); border: 1px solid var(--border);
-      border-radius: var(--r); padding: 0.75rem 1rem;
-      font-size: 0.78rem; color: var(--text-2); line-height: 1.6;
+    /* summary stat grid */
+    .pc-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+    .pc-stat-card {
+      background: var(--surface-3); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.6rem 0.5rem; text-align: center;
     }
-    .pc-summary strong { color: var(--text-1); }
+    .pc-stat-val { font-size: 1.05rem; font-weight: 800; color: var(--accent); letter-spacing: -0.03em; line-height: 1; }
+    .pc-stat-lbl { font-size: 0.6rem; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 3px; }
+    .pc-norun-msg { font-size: 0.78rem; color: var(--red); text-align: center; padding: 0.5rem; }
 
     .pc-footer {
       padding: 1rem 1.5rem 1.4rem;
-      display: flex; gap: 0.6rem; justify-content: flex-end;
+      display: flex; gap: 0.6rem; justify-content: space-between; align-items: center;
       border-top: 1px solid var(--border); flex-shrink: 0;
     }
+    .pc-footer-hint { font-size: 0.72rem; color: var(--text-3); }
+    .pc-footer-btns { display: flex; gap: 0.5rem; }
     .pc-btn-cancel {
       padding: 0.55rem 1.1rem; border-radius: var(--r);
-      background: var(--surface-2); border: 1px solid var(--border);
+      background: transparent; border: 1px solid var(--border);
       color: var(--text-2); font-size: 0.82rem; font-weight: 500;
       cursor: pointer; font-family: inherit; transition: all 0.12s;
     }
-    .pc-btn-cancel:hover { background: var(--surface-3); color: var(--text-1); }
-
+    .pc-btn-cancel:hover { background: var(--surface-2); color: var(--text-1); }
     .pc-btn-run {
-      padding: 0.55rem 1.4rem; border-radius: var(--r);
+      padding: 0.6rem 1.5rem; border-radius: var(--r);
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
       border: none; color: white; font-size: 0.85rem; font-weight: 700;
       cursor: pointer; font-family: inherit;
-      display: flex; align-items: center; gap: 0.4rem;
-      transition: all 0.15s; box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+      display: flex; align-items: center; gap: 0.45rem;
+      transition: all 0.15s; box-shadow: 0 2px 10px rgba(99,102,241,0.35);
     }
-    .pc-btn-run:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(99,102,241,0.45); }
+    .pc-btn-run:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.5); }
     .pc-btn-run:active { transform: none; }
+    .pc-btn-run:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    /* stage log (live progress) */
+    /* stage log */
     .pc-log {
       display: none; padding: 0.75rem 1rem;
       background: var(--surface-2); border: 1px solid var(--border);
-      border-radius: var(--r); font-size: 0.75rem; font-family: monospace;
-      line-height: 1.9; color: var(--text-2); max-height: 140px; overflow-y: auto;
+      border-radius: var(--r); font-size: 0.73rem; font-family: monospace;
+      line-height: 1.9; color: var(--text-2); max-height: 130px; overflow-y: auto;
     }
     .pc-log.visible { display: block; }
     .pc-log-line.ok   { color: var(--green); }
@@ -960,6 +1007,10 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         <span id="panel-copy-text">Copy Article</span>
       </button>
+      <button class="btn btn-download" onclick="downloadArticle()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </button>
       <button class="btn btn-danger" id="panel-reject-btn">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         Reject
@@ -977,7 +1028,12 @@
   <div class="panel-body" id="panel-body-wrap">
     <!-- Article tab -->
     <div id="panel-tab-article">
-      <div class="article-html" id="panel-body"></div>
+      <div style="padding: 1.5rem 1.5rem 0">
+        <div class="article-img-wrap" id="panel-img-wrap">
+          <img class="article-featured-img" id="panel-img" src="" alt="Featured image" />
+        </div>
+      </div>
+      <div class="article-html" id="panel-body" style="padding: 0 1.5rem 1.5rem"></div>
     </div>
     <!-- SEO tab -->
     <div id="panel-tab-seo" style="display:none;">
@@ -1083,10 +1139,17 @@
 <!-- ── PIPELINE CONFIG MODAL ── -->
 <div class="pc-backdrop" id="pc-modal">
   <div class="pc-modal">
+
+    <!-- Header -->
     <div class="pc-header">
-      <div>
-        <div class="pc-title">Configure Pipeline Run</div>
-        <div class="pc-subtitle">Customise what the pipeline fetches and writes this run.</div>
+      <div class="pc-header-left">
+        <div class="pc-header-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </div>
+        <div>
+          <div class="pc-title">Configure Pipeline Run</div>
+          <div class="pc-subtitle">Set what the pipeline fetches and writes this run</div>
+        </div>
       </div>
       <button class="panel-close" onclick="closePCModal()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1095,123 +1158,174 @@
 
     <div class="pc-body">
 
-      <!-- Article count -->
-      <div class="pc-section">
-        <label class="pc-label">
-          Number of Articles
-          <span class="pc-val" id="pc-count-val">10</span>
-        </label>
-        <input type="range" class="pc-slider" id="pc-count"
-               min="1" max="50" step="1" value="10"
-               oninput="pcSync('count', this.value)">
-        <div class="pc-ticks"><span>1</span><span>10</span><span>25</span><span>50</span></div>
+      <!-- Row 1: Count + Words side by side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+
+        <!-- Article count -->
+        <div class="pc-card">
+          <div class="pc-card-row">
+            <div class="pc-card-label">
+              <div class="pc-card-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              Articles
+            </div>
+            <span class="pc-val-pill" id="pc-count-val">10</span>
+          </div>
+          <input type="range" class="pc-slider" id="pc-count" min="1" max="50" step="1" value="10" oninput="pcSync('count', this.value)">
+          <div class="pc-ticks"><span>1</span><span>25</span><span>50</span></div>
+        </div>
+
+        <!-- Word length -->
+        <div class="pc-card">
+          <div class="pc-card-row">
+            <div class="pc-card-label">
+              <div class="pc-card-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+              </div>
+              Words
+            </div>
+            <span class="pc-val-pill" id="pc-words-val">700</span>
+          </div>
+          <input type="range" class="pc-slider" id="pc-words" min="300" max="2000" step="50" value="700" oninput="pcSync('words', this.value)">
+          <div class="pc-ticks"><span>300</span><span>1000</span><span>2000</span></div>
+        </div>
+
+      </div>
+
+      <!-- Credibility -->
+      <div class="pc-card">
+        <div class="pc-card-row">
+          <div class="pc-card-label">
+            <div class="pc-card-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            Min Credibility Score
+          </div>
+          <span class="pc-val-pill" id="pc-cred-val">40</span>
+        </div>
+        <input type="range" class="pc-slider" id="pc-cred" min="0" max="100" step="5" value="40" oninput="pcSync('cred', this.value)">
+        <div class="pc-ticks"><span>0 — Any</span><span>50 — Medium</span><span>80 — High</span><span>100</span></div>
       </div>
 
       <!-- Category -->
-      <div class="pc-section">
-        <label class="pc-label">Category / Topic</label>
-        <select class="pc-select" id="pc-category" onchange="pcUpdateSummary()">
-          <option value="all">All Categories</option>
-          <option value="technology">Technology</option>
-          <option value="finance">Finance</option>
-          <option value="politics">Politics</option>
-          <option value="sports">Sports</option>
-          <option value="health">Health</option>
-          <option value="business">Business</option>
-          <option value="science">Science</option>
-          <option value="entertainment">Entertainment</option>
-        </select>
-      </div>
-
-      <!-- Word length -->
-      <div class="pc-section">
-        <label class="pc-label">
-          Article Word Length
-          <span class="pc-val" id="pc-words-val">700 words</span>
-        </label>
-        <input type="range" class="pc-slider" id="pc-words"
-               min="300" max="2000" step="50" value="700"
-               oninput="pcSync('words', this.value)">
-        <div class="pc-ticks"><span>300</span><span>700</span><span>1200</span><span>2000</span></div>
-      </div>
-
-      <!-- Credibility threshold -->
-      <div class="pc-section">
-        <label class="pc-label">
-          Min Credibility Score
-          <span class="pc-val" id="pc-cred-val">40 / 100</span>
-        </label>
-        <input type="range" class="pc-slider" id="pc-cred"
-               min="0" max="100" step="5" value="40"
-               oninput="pcSync('cred', this.value)">
-        <div class="pc-ticks"><span>0</span><span>40</span><span>70</span><span>100</span></div>
+      <div class="pc-card">
+        <div class="pc-card-label" style="margin-bottom:0.55rem;">
+          <div class="pc-card-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </div>
+          Category
+        </div>
+        <div class="pc-chips" id="pc-chips">
+          <button class="pc-chip active" onclick="pcSetCat(this,'all')">All</button>
+          <button class="pc-chip" onclick="pcSetCat(this,'technology')">Technology</button>
+          <button class="pc-chip" onclick="pcSetCat(this,'finance')">Finance</button>
+          <button class="pc-chip" onclick="pcSetCat(this,'politics')">Politics</button>
+          <button class="pc-chip" onclick="pcSetCat(this,'sports')">Sports</button>
+          <button class="pc-chip" onclick="pcSetCat(this,'health')">Health</button>
+          <button class="pc-chip" onclick="pcSetCat(this,'business')">Business</button>
+          <button class="pc-chip" onclick="pcSetCat(this,'science')">Science</button>
+          <button class="pc-chip" onclick="pcSetCat(this,'entertainment')">Entertainment</button>
+        </div>
+        <input type="hidden" id="pc-category" value="all">
       </div>
 
       <!-- AI Model -->
-      <div class="pc-section">
-        <label class="pc-label">AI Writing Model</label>
+      <div class="pc-card">
+        <div class="pc-card-label" style="margin-bottom:0.55rem;">
+          <div class="pc-card-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          AI Writing Model
+        </div>
         <select class="pc-select" id="pc-model" onchange="pcUpdateSummary()">
-          <option value="">Default (from settings)</option>
-          <optgroup label="Anthropic">
-            <option value="claude-opus-4-7">Claude Opus 4.7 — Best quality</option>
-            <option value="claude-sonnet-4-6" selected>Claude Sonnet 4.6 — Balanced</option>
-            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 — Fastest</option>
+          <option value="">Default (from .env)</option>
+          <optgroup label="── Groq (Free) ──">
+            <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B — Default ★</option>
+            <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+            <option value="gemma2-9b-it">Gemma 2 9B</option>
           </optgroup>
-          <optgroup label="OpenAI">
+          <optgroup label="── Google ──">
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+          </optgroup>
+          <optgroup label="── Anthropic ──">
+            <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+          </optgroup>
+          <optgroup label="── OpenAI ──">
             <option value="gpt-4o">GPT-4o</option>
             <option value="gpt-4o-mini">GPT-4o Mini</option>
-          </optgroup>
-          <optgroup label="Google">
-            <option value="gemini-2.0-flash">Gemini 2.0 Flash — Recommended</option>
-            <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite — Fastest</option>
-            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
           </optgroup>
         </select>
       </div>
 
       <!-- Pipeline stages -->
-      <div class="pc-section">
-        <label class="pc-label">Pipeline Stages</label>
+      <div class="pc-card">
+        <div class="pc-card-label" style="margin-bottom:0.6rem;">
+          <div class="pc-card-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          Pipeline Stages
+        </div>
         <div class="pc-stages">
           <button class="pc-stage-btn active" id="pcstage-discovery" onclick="pcToggleStage('discovery')">
-            <div class="pc-stage-dot"></div>
-            <div>
-              <div style="font-weight:600">Discovery</div>
-              <div style="font-size:0.68rem;color:var(--text-3);margin-top:1px">Fetch news sources</div>
+            <div class="pc-stage-check">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
+            <div class="pc-stage-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+            <div class="pc-stage-name">Discovery</div>
+            <div class="pc-stage-desc">Fetch news sources</div>
           </button>
           <button class="pc-stage-btn active" id="pcstage-verification" onclick="pcToggleStage('verification')">
-            <div class="pc-stage-dot"></div>
-            <div>
-              <div style="font-weight:600">Verification</div>
-              <div style="font-size:0.68rem;color:var(--text-3);margin-top:1px">Fact-check stories</div>
+            <div class="pc-stage-check">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
+            <div class="pc-stage-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="pc-stage-name">Verification</div>
+            <div class="pc-stage-desc">Fact-check stories</div>
           </button>
           <button class="pc-stage-btn active" id="pcstage-writing" onclick="pcToggleStage('writing')">
-            <div class="pc-stage-dot"></div>
-            <div>
-              <div style="font-weight:600">Writing</div>
-              <div style="font-size:0.68rem;color:var(--text-3);margin-top:1px">Generate articles</div>
+            <div class="pc-stage-check">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
+            <div class="pc-stage-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
+            <div class="pc-stage-name">Writing</div>
+            <div class="pc-stage-desc">Generate articles</div>
           </button>
         </div>
       </div>
 
-      <!-- Summary -->
-      <div class="pc-summary" id="pc-summary"></div>
+      <!-- Summary stat grid -->
+      <div class="pc-stat-grid" id="pc-stat-grid">
+        <div class="pc-stat-card"><div class="pc-stat-val" id="pcs-articles">10</div><div class="pc-stat-lbl">Articles</div></div>
+        <div class="pc-stat-card"><div class="pc-stat-val" id="pcs-words">700</div><div class="pc-stat-lbl">Words each</div></div>
+        <div class="pc-stat-card"><div class="pc-stat-val" id="pcs-cred">40+</div><div class="pc-stat-lbl">Min cred</div></div>
+      </div>
+      <div class="pc-norun-msg" id="pc-norun-msg" style="display:none">Select at least one pipeline stage to continue.</div>
 
-      <!-- Live log (shown while running) -->
+      <!-- Live log -->
       <div class="pc-log" id="pc-log"></div>
 
     </div>
 
     <div class="pc-footer">
-      <button class="pc-btn-cancel" onclick="closePCModal()">Cancel</button>
-      <button class="pc-btn-run" id="pc-run-btn" onclick="confirmRunPipeline()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        <span id="pc-run-text">Run Pipeline</span>
-      </button>
+      <span class="pc-footer-hint" id="pc-summary"></span>
+      <div class="pc-footer-btns">
+        <button class="pc-btn-cancel" onclick="closePCModal()">Cancel</button>
+        <button class="pc-btn-run" id="pc-run-btn" onclick="confirmRunPipeline()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span id="pc-run-text">Run Pipeline</span>
+        </button>
+      </div>
     </div>
+
   </div>
 </div>
 
@@ -1476,6 +1590,19 @@
       document.getElementById('panel-copy-text').textContent = 'Copy Article';
       document.getElementById('panel-copy-btn').className = 'btn btn-primary';
       document.getElementById('panel-reject-btn').onclick = () => openRejectModal(id);
+
+      // Featured image
+      const imgWrap = document.getElementById('panel-img-wrap');
+      const img     = document.getElementById('panel-img');
+      if (a.image_url) {
+        img.src = a.image_url;
+        img.alt = a.headline;
+        imgWrap.classList.add('has-image');
+      } else {
+        imgWrap.classList.remove('has-image');
+        img.src = '';
+      }
+
       switchPanelTab('article');
       renderSEOPanel(a);
       document.getElementById('panel').classList.add('open');
@@ -1506,6 +1633,45 @@
       toast('Article copied to clipboard', 'ok');
       setTimeout(() => { btn.className = 'btn btn-primary'; span.textContent = 'Copy Article'; }, 2000);
     }).catch(() => toast('Copy failed — check clipboard permissions', 'err'));
+  }
+
+  function downloadArticle() {
+    if (!currentArticle) return;
+    const a = currentArticle;
+    const imgHtml = a.image_url
+      ? `<img src="${a.image_url}" alt="${escHtml(a.headline)}" style="width:100%;max-height:400px;object-fit:cover;border-radius:8px;margin-bottom:1.5rem;">`
+      : '';
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escHtml(a.headline)}</title>
+  <style>
+    body { font-family: Georgia, serif; max-width: 780px; margin: 2rem auto; padding: 0 1.5rem; color: #1a1a1a; line-height: 1.85; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .meta { font-size: 0.85rem; color: #666; margin-bottom: 1.5rem; }
+    p { margin-bottom: 1rem; }
+    h2 { margin: 1.5rem 0 0.5rem; }
+    h3 { margin: 1.25rem 0 0.4rem; }
+    blockquote { border-left: 3px solid #6366f1; padding-left: 1rem; color: #555; margin: 1rem 0; }
+  </style>
+</head>
+<body>
+  ${imgHtml}
+  <h1>${escHtml(a.headline)}</h1>
+  <div class="meta">${escHtml(a.category)} · ${a.word_count} words · SEO ${a.seo_score || 0}/100</div>
+  ${a.article_html}
+</body>
+</html>`;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href     = url;
+    link.download = a.headline.slice(0, 60).replace(/[^a-z0-9\s-]/gi, '').trim().replace(/\s+/g, '-').toLowerCase() + '.html';
+    link.click();
+    URL.revokeObjectURL(url);
+    toast('Article downloaded', 'ok');
   }
 
   async function quickCopy(id, btn) {
@@ -1559,6 +1725,8 @@
 
   function runPipeline() {
     if (document.getElementById('run-btn').disabled) return;
+    // Init slider fills
+    ['pc-count','pc-words','pc-cred'].forEach(id => pcSliderFill(document.getElementById(id)));
     pcUpdateSummary();
     document.getElementById('pc-log').classList.remove('visible');
     document.getElementById('pc-log').innerHTML = '';
@@ -1576,13 +1744,31 @@
     if (e.target === this) closePCModal();
   });
 
+  function pcSliderFill(el) {
+    const min = parseFloat(el.min), max = parseFloat(el.max), val = parseFloat(el.value);
+    const pct = ((val - min) / (max - min) * 100).toFixed(1) + '%';
+    el.style.setProperty('--fill', pct);
+  }
+
+  function pcSetCat(btn, val) {
+    document.querySelectorAll('.pc-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('pc-category').value = val;
+    pcUpdateSummary();
+  }
+
   function pcSync(key, val) {
+    const el = document.getElementById('pc-' + (key === 'count' ? 'count' : key === 'words' ? 'words' : 'cred'));
+    pcSliderFill(el);
     if (key === 'count') {
       document.getElementById('pc-count-val').textContent = val;
+      document.getElementById('pcs-articles').textContent = val;
     } else if (key === 'words') {
-      document.getElementById('pc-words-val').textContent = val + ' words';
+      document.getElementById('pc-words-val').textContent = val;
+      document.getElementById('pcs-words').textContent = val;
     } else if (key === 'cred') {
-      document.getElementById('pc-cred-val').textContent = val + ' / 100';
+      document.getElementById('pc-cred-val').textContent = val;
+      document.getElementById('pcs-cred').textContent = val + '+';
     }
     pcUpdateSummary();
   }
@@ -1595,31 +1781,26 @@
   }
 
   function pcUpdateSummary() {
-    const count    = document.getElementById('pc-count').value;
-    const cat      = document.getElementById('pc-category').value;
-    const words    = document.getElementById('pc-words').value;
-    const cred     = document.getElementById('pc-cred').value;
-    const modelEl  = document.getElementById('pc-model');
-    const model    = modelEl.options[modelEl.selectedIndex].text;
     const activeStages = Object.entries(pcStages).filter(([,v]) => v).map(([k]) => k);
-    const stages   = activeStages.join(' → ');
     const noStages = activeStages.length === 0;
-
-    const catLabel = cat === 'all' ? 'all categories' : cat;
-    const runBtn   = document.getElementById('pc-run-btn');
+    const runBtn = document.getElementById('pc-run-btn');
+    const noMsg  = document.getElementById('pc-norun-msg');
+    const sumEl  = document.getElementById('pc-summary');
+    const grid   = document.getElementById('pc-stat-grid');
 
     if (noStages) {
-      document.getElementById('pc-summary').innerHTML =
-        '<span style="color:var(--red)">Select at least one pipeline stage to run.</span>';
+      noMsg.style.display = '';
+      grid.style.display  = 'none';
+      sumEl.textContent   = '';
       runBtn.disabled = true;
-      runBtn.style.opacity = '0.4';
     } else {
-      document.getElementById('pc-summary').innerHTML =
-        `Will run <strong>${stages}</strong> and write up to <strong>${count} ${catLabel} articles</strong> ` +
-        `at ~<strong>${words} words</strong> each using <strong>${model}</strong>. ` +
-        `Min credibility: <strong>${cred}</strong>.`;
+      noMsg.style.display = 'none';
+      grid.style.display  = '';
+      const modelEl = document.getElementById('pc-model');
+      const model   = modelEl.options[modelEl.selectedIndex].text.split(' —')[0];
+      const cat     = document.getElementById('pc-category').value;
+      sumEl.textContent = `${activeStages.join(' → ')} · ${model} · ${cat === 'all' ? 'all topics' : cat}`;
       runBtn.disabled = false;
-      runBtn.style.opacity = '';
     }
   }
 

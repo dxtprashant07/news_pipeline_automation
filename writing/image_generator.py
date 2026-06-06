@@ -3,9 +3,11 @@ Image sourcing for articles (Stage 4).
 
 Priority order:
   1. Source image captured from the original RSS / news feed (free, no API)
-  2. DALL-E 3 generation (only if IMAGE_GENERATION_ENABLED=true and OPENAI_API_KEY set)
-  3. Empty string (article published without featured image)
+  2. Pollinations.ai AI generation (free, no API key required)
+  3. DALL-E 3 generation (only if IMAGE_GENERATION_ENABLED=true and OPENAI_API_KEY set)
+  4. Empty string (article published without featured image)
 """
+import urllib.parse
 import requests
 from core.config.settings import get_settings
 from core.utils.logger import get_logger
@@ -66,7 +68,13 @@ class ImageGenerator:
                 return source_image_url
             logger.debug(f"Source image failed probe: {source_image_url[:80]}")
 
-        # ── Priority 2: DALL-E generation ─────────────────────────────────────
+        # ── Priority 2: Pollinations.ai (free, no API key) ───────────────────
+        try:
+            return self._call_pollinations(headline, category)
+        except Exception as exc:
+            logger.warning(f"Pollinations image failed for '{headline[:50]}': {exc!r}")
+
+        # ── Priority 3: DALL-E generation ─────────────────────────────────────
         if self.settings.image_generation_enabled:
             if not self.settings.openai_api_key:
                 logger.warning("IMAGE_GENERATION_ENABLED=true but OPENAI_API_KEY not set — skipping")
@@ -77,6 +85,22 @@ class ImageGenerator:
                     logger.error(f"DALL-E generation failed for '{headline[:50]}': {exc!r}")
 
         return ""
+
+    def _call_pollinations(self, headline: str, category: str) -> str:
+        prompt = (
+            f"professional editorial news photo, {headline}, "
+            f"{category} news, photojournalistic style, "
+            "no text, no watermarks, high quality"
+        )
+        encoded = urllib.parse.quote(prompt)
+        url = f"https://image.pollinations.ai/prompt/{encoded}?width=1200&height=630&nologo=true&model=flux"
+
+        r = requests.head(url, timeout=20, allow_redirects=True)
+        if r.status_code == 200 and "image" in r.headers.get("content-type", ""):
+            logger.info(f"Pollinations image ready for '{headline[:50]}'")
+            return url
+
+        raise ValueError(f"Pollinations returned status {r.status_code}")
 
     def _call_dalle(self, headline: str, category: str) -> str:
         import openai
